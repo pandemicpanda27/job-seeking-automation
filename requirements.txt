@@ -1,0 +1,8 @@
+pyngrok
+mysql-connector-python
+flask-SQLAlchemy
+sqlalchemy
+pandas
+flask
+python-dotenv
+click

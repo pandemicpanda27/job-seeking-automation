@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Board</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='jobs_style.css') }}">
+</head>
+<body>
+    <h1>Available Jobs</h1>
+    {% for job in jobs %}
+        <div class="job-card">
+            <h2>{{ job.title }} at {{ job.company }}</h2>
+            <p><strong>Location:</strong> {{ job.location }}</p>
+            <a href="{{ job.apply_link }}" target="_blank">Apply Here</a>
+        </div>
+    {% endfor %}
+</body>
+</html>
