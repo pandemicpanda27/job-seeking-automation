@@ -1,0 +1,9 @@
+<h5 class="panel-title">Upload Resume</h5>
+<div class="form-group">
+  <input type="file" id="resumeFile" name="resumeFile" accept=".pdf" />
+  <small class="text-muted">PDF files only</small>
+
+  {% include 'components/resume_message.html' %}
+
+  <div id="uploadFeedback" class="upload-feedback"></div>
+</div>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}Job Seeking Automation{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Link to CSS with cache-busting query string -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='jobs_style.css') }}?v=1" />
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">Job Seeking Automation</div>
+  </nav>
+
+  {% block content %}{% endblock %}
+  {% block scripts %} 
+  <script src="{{ url_for('static', filename='resume_upload.js') }}"></script>
+  {% endblock%}
+</body>
+</html>
