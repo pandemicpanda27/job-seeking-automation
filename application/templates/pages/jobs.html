@@ -13,20 +13,19 @@
   <div class="center-panel">
     <h1>Available Jobs</h1>
 
-    {% if jobs %}
-      {% for job in jobs %}
-        <div class="job-card">
-          <h2>{{ job.title }} at {{ job.company }}</h2>
-          <p><strong>Location:</strong> {{ job.location }}</p>
-          <a href="{{ job.apply_link }}" target="_blank">Apply Here</a>
-        </div>
-      {% endfor %}
-    {% else %}
-      <div class="welcome-message">
-        <h4>Find Your Dream Job</h4>
-        <p>Enter a job title and location to start searching</p>
-      </div>
-    {% endif %}
+    <!-- Welcome message shown before any search -->
+    <div class="welcome-message" id="welcomeMessage">
+      <h4>Find Your Dream Job</h4>
+      <p>Enter a job title and location to start searching</p>
+    </div>
+
+    <!-- Loading spinner or text -->
+    <div id="loadingIndicator" class="d-none">
+      <p>Loading jobs, please wait...</p>
+    </div>
+
+    <!-- Container where search results will be dynamically inserted -->
+    <div id="resultsContainer" class="job-results mt-4"></div>
   </div>
 
   <!-- Right Sidebar -->
@@ -34,4 +33,15 @@
     {% include 'components/sidebar.html' %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <!-- Inject the API URL dynamically into a global JS variable -->
+  <script>
+    const SEARCH_JOBS_URL = "{{ url_for('jobs_bp.search_jobs') }}";
+  </script>
+
+  <!-- Load the main search script after the URL is available -->
+  <script src="{{ url_for('static', filename='js/search.js') }}"></script>
 {% endblock %}
