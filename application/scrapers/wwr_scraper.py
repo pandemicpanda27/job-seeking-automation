@@ -1,7 +1,6 @@
 import time
 import random
 from pprint import pprint
-# NOTE: Removed gspread and oauth2client imports
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -11,13 +10,9 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from urllib.parse import quote_plus
 from typing import List, Dict
 
-# -------------------------
-# NOTE: Google Sheets Setup and push_to_sheets function REMOVED
-# -------------------------
 
-# -------------------------
 # Selenium Setup
-# -------------------------
+
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
@@ -25,70 +20,58 @@ USER_AGENTS = [
 
 
 def get_driver():
-    """Sets up and returns a configured Chrome WebDriver instance."""
+    # Sets up and returns a configured Chrome WebDriver instance
     options = Options()
     options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--log-level=3")  # Suppress console logs
-    # options.add_argument("--headless") # uncomment to run in background
+    options.add_argument("--log-level=3")
+    options.add_argument("--headless") 
     try:
         driver = webdriver.Chrome(options=options)
         driver.delete_all_cookies()
         return driver
     except WebDriverException as e:
-        print(f"🚨 Failed to initialize WebDriver. Check ChromeDriver version. Error: {e}")
+        print(f"Failed to initialize WebDriver. Check ChromeDriver version. Error: {e}")
         return None
 
 
-# -------------------------
 # Scraper for We Work Remotely
-# -------------------------
 def get_wwr_jobs(job_role: str, location: str = "", pages: int = 3) -> List[Dict]:
-    """
-    Scrapes job listings from We Work Remotely based on job_role and optional location,
-    and returns them as a list of dictionaries.
-    """
-    print(f"🚀 Starting We Work Remotely scraper for role: {job_role} in location: {location or 'default'}")
+    print(f"Starting We Work Remotely scraper for role: {job_role} in location: {location or 'default'}")
     jobs = []
     source_name = "We Work Remotely"
     driver = get_driver()
     if not driver:
         return jobs
 
-    # 1. Combine job_role and location for the 'term' parameter if location is provided
-    # WWR uses 'term' for the entire search phrase.
     search_term = f"{job_role} {location}" if location else job_role
     query = quote_plus(search_term)
 
     for page in range(1, pages + 1):
-        # The search URL uses 'term' for the combined search phrase
         url = f"https://weworkremotely.com/remote-jobs/search?term={query}&page={page}"
         print(f" Scraping page {page}: {url}")
         driver.get(url)
 
         try:
-            # Wait for job listings to load
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "li.new-listing-container"))
             )
         except TimeoutException:
-            print(f"⚠️ No job listings found on page {page}.")
+            print(f"No job listings found on page {page}.")
             break
 
         job_listings = driver.find_elements(By.CSS_SELECTOR, "li.new-listing-container")
         print(f"  Found {len(job_listings)} jobs on page {page}")
 
         for li in job_listings:
-            title, link, company, scraped_location = "N/A", "N/A", "N/A", "Anywhere"  # Renamed location
+            title, link, company, scraped_location = "N/A", "N/A", "N/A", "Anywhere"
             experience = "N/A"
 
-            # Select the job <a> link
             try:
                 job_link_el = li.find_element(By.CSS_SELECTOR, "a[href*='/remote-jobs/']")
-                # WWR links are relative, so we prepend the base URL
                 link = "https://weworkremotely.com" + job_link_el.get_attribute("href")
             except NoSuchElementException:
-                continue  # skip if no job link/title container
+                continue
 
             # Job title
             try:
@@ -102,7 +85,7 @@ def get_wwr_jobs(job_role: str, location: str = "", pages: int = 3) -> List[Dict
             except NoSuchElementException:
                 pass
 
-            # Location (often listed as headquarters or category, but defaults to 'Anywhere')
+            # Location
             try:
                 scraped_location = job_link_el.find_element(By.CSS_SELECTOR,
                                                             "p.new-listing___company-headquarters").text.strip() or "Anywhere"
@@ -122,17 +105,15 @@ def get_wwr_jobs(job_role: str, location: str = "", pages: int = 3) -> List[Dict
         time.sleep(random.uniform(2, 5))
 
     driver.quit()
-    print(f"✅ Finished scraping We Work Remotely. Collected {len(jobs)} jobs.")
+    print(f"Finished scraping We Work Remotely. Collected {len(jobs)} jobs.")
     return jobs
 
 
-# -------------------------
 # Local Execution Test Block
-# -------------------------
 if __name__ == "__main__":
     from pprint import pprint
 
-    # Test 1: Search with location (added to search term)
+    # case1: Search with location (added to search term)
     job_role_1 = input("Enter the job role you want to search on WWR (e.g., 'React Developer'): ").strip()
     job_location_1 = input("Enter the location (e.g., 'Europe' or 'New York'): ").strip()
 
@@ -144,7 +125,7 @@ if __name__ == "__main__":
 
     print("-" * 30)
 
-    # Test 2: Search without location (default remote search)
+    # case2: Search without location
     job_role_2 = input("Enter a second job role (no location): ").strip()
 
     wwr_jobs_2 = get_wwr_jobs(job_role_2, pages=1)  # location defaults to ""

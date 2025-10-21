@@ -4,16 +4,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from pprint import pprint
-# NOTE: Removed gspread and oauth2client imports
+
 import random
 import time
 from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
 from typing import List, Dict
-from urllib.parse import quote_plus  # Added for URL encoding
+from urllib.parse import quote_plus
 
-# -------------------------
 # Common Browser Options
-# -------------------------
+
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
@@ -22,46 +21,39 @@ USER_AGENTS = [
 
 
 def get_driver():
-    """Sets up and returns a configured Chrome WebDriver instance."""
+    # Sets up and returns a configured Chrome WebDriver instance
     options = Options()
     options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--log-level=3")  # Suppress console logs
-    # options.add_argument("--headless")  # uncomment if you want headless mode
+    options.add_argument("--log-level=3")
+    options.add_argument("--headless")
     try:
         driver = webdriver.Chrome(options=options)
         driver.delete_all_cookies()
         return driver
     except WebDriverException as e:
-        print(f"🚨 Failed to initialize WebDriver. Check ChromeDriver version. Error: {e}")
+        print(f"Failed to initialize WebDriver. Check ChromeDriver version. Error: {e}")
         return None
 
 
-# -------------------------
-# Scrape Naukri (multi-page)
-# -------------------------
+# Scrape Naukri multi page
+
 def get_naukri_jobs(job_role: str, location: str = "", pages: int = 3) -> List[Dict]:
-    """
-    Scrapes job listings from Naukri based on job_role and optional location,
-    and returns them as a list of dictionaries.
-    """
-    print(f"🚀 Starting Naukri scraper for role: {job_role} in location: {location or 'default'}")
+    
+    print(f"Starting Naukri scraper for role: {job_role} in location: {location or 'default'}")
     jobs = []
     source_name = "Naukri"
 
-    # 1. Prepare parameters
-    # Naukri's URL often uses hyphens in the path for the job role
     role_path = job_role.replace(" ", "-").lower()
-    # The 'k' query parameter is the main keyword
+    
     role_query = quote_plus(job_role)
-    # The 'l' query parameter is the location
+    
     loc_query = quote_plus(location)
 
     for page in range(1, pages + 1):
-        # 2. Build the base URL path
+        
         base_url_path = f"https://www.naukri.com/{role_path}-jobs-{page}"
 
-        # 3. Build the query string
         query_parts = [f"k={role_query}"]
         if loc_query:
             query_parts.append(f"l={loc_query}")
@@ -77,12 +69,12 @@ def get_naukri_jobs(job_role: str, location: str = "", pages: int = 3) -> List[D
 
         try:
             driver.get(url)
-            # Wait for job listings to load. 'cust-job-tuple' is a common job card class.
+            # wait for job listings to load.
             job_listings = WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, "cust-job-tuple"))
             )
         except (TimeoutException, NoSuchElementException):
-            print(f"⚠️ No jobs found or timed out on Naukri page {page}. Stopping.")
+            print(f"No jobs found or timed out on Naukri page {page}. Stopping.")
             driver.quit()
             break
 
@@ -91,14 +83,14 @@ def get_naukri_jobs(job_role: str, location: str = "", pages: int = 3) -> List[D
             link = "N/A"
             company = "N/A"
             experience = "N/A"
-            scraped_location = "N/A"  # Renamed to avoid masking function parameter
+            scraped_location = "N/A" 
 
             try:
                 title_elem = job.find_element(By.CSS_SELECTOR, "a.title")
                 title = title_elem.text.strip()
                 link = title_elem.get_attribute("href")
             except NoSuchElementException:
-                continue  # Skip job if title/link isn't found
+                continue 
 
             try:
                 company = job.find_element(By.CSS_SELECTOR, "a.comp-name").text.strip()
@@ -128,17 +120,16 @@ def get_naukri_jobs(job_role: str, location: str = "", pages: int = 3) -> List[D
         driver.quit()
         time.sleep(random.uniform(2, 4))
 
-    print(f"✅ Finished scraping Naukri. Found {len(jobs)} total job listings.")
+    print(f"Finished scraping Naukri. Found {len(jobs)} total job listings.")
     return jobs
 
 
-# -------------------------
 # Local Execution Test Block
-# -------------------------
+
 if __name__ == "__main__":
     from pprint import pprint
 
-    # Test 1: Search with specific location
+    # case1: Search with specific location
     job_role_1 = input("Enter the job role you want to search on Naukri (e.g., 'Software Developer'): ").strip()
     job_location_1 = input("Enter the location (e.g., 'Bangalore'): ").strip()
 
@@ -150,7 +141,7 @@ if __name__ == "__main__":
 
     print("-" * 30)
 
-    # Test 2: Search without location (default scraping)
+    # case2: Search without location
     job_role_2 = input("Enter a second job role (no location): ").strip()
 
     naukri_jobs_2 = get_naukri_jobs(job_role_2, pages=1)  # location defaults to ""

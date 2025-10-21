@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from application.job_controller import fetch_all_jobs
 
-jobs_bp = Blueprint('jobs_bp', __name__)
+api_bp = Blueprint('apis_bp', __name__)
 
-@jobs_bp.route('/api/search-jobs', methods=['POST'])
+@api_bp.route('/api/search-jobs', methods=['POST'])
 def search_jobs():
     data = request.get_json()
     job_title = data.get('job_title', '').strip()

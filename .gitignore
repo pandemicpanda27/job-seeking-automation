@@ -1,2 +1,7 @@
 .env
-vir_env
+vir_env/
+__pycache__/
+config.py
+temp.py
+insert_csv.py
+*.pyc

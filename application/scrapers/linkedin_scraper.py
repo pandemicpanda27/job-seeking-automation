@@ -3,15 +3,9 @@ import random
 from urllib.parse import quote_plus
 from typing import List, Dict
 
-# The core scraping library
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-# NOTE: Removed gspread and oauth2client imports
-
-# ----------------------------
-# Configuration
-# ----------------------------
-PAGES = 2  # Number of pages to scrape
+PAGES = 2
 RESULTS_PER_PAGE = 25  # LinkedIn default is 25 per page
 HEADLESS = True
 DELAY_MIN = 1.5
@@ -25,17 +19,16 @@ USER_AGENTS = [
 ]
 
 
-# ----------------------------
 # Scraping helpers
-# ----------------------------
+
 def build_search_url(query: str, location: str, start: int = 0) -> str:
-    """Constructs the LinkedIn jobs search URL."""
-    # LinkedIn search naturally handles empty/non-specific location for broad search.
+    # constructs the LinkedIn jobs search URL
+   
     return f"https://www.linkedin.com/jobs/search/?keywords={quote_plus(query)}&location={quote_plus(location)}&start={start}"
 
 
 def text_or_none(el):
-    """Safely extracts text from a Playwright element handle."""
+    # Safely extracts text from a Playwright element handle
     try:
         return el.inner_text().strip()
     except Exception:
@@ -43,7 +36,7 @@ def text_or_none(el):
 
 
 def scrape_page(page, url) -> List[Dict]:
-    """Scrapes job data from a single search results page."""
+    # Scrapes job data from a single search results page
     jobs = []
     try:
         # Wait for the main results list to load
@@ -61,7 +54,7 @@ def scrape_page(page, url) -> List[Dict]:
         job_link = "N/A"
 
         try:
-            # --- Data Extraction ---
+            # DATA EXTRACTION
 
             # Job title
             title_el = item.query_selector("h3, .base-search-card__title")
@@ -89,7 +82,6 @@ def scrape_page(page, url) -> List[Dict]:
             if job_link and job_link.startswith("/"):
                 job_link = "https://www.linkedin.com" + job_link
 
-            # --- Format and Append ---
             if job_title != "N/A" and job_link:
                 jobs.append({
                     "title": job_title,
@@ -100,20 +92,15 @@ def scrape_page(page, url) -> List[Dict]:
                     "experience": exp_text
                 })
         except Exception:
-            # Skip job card on general error
+            # skip job card on general error
             continue
     return jobs
 
 
-# ----------------------------
 # Orchestrator
-# ----------------------------
+
 def get_linkedin_jobs(query: str, location: str = "", pages: int = PAGES) -> List[Dict]:
-    """
-    Main function to run the LinkedIn scraper and return job listings.
-    Accepts an optional location parameter for targeted search.
-    """
-    print(f"🚀 Starting LinkedIn scraper for role: '{query}' in location: '{location or 'default'}'")
+    print(f"Starting LinkedIn scraper for role: '{query}' in location: '{location or 'default'}'")
     scraped = []
 
     with sync_playwright() as p:
@@ -139,11 +126,9 @@ def get_linkedin_jobs(query: str, location: str = "", pages: int = PAGES) -> Lis
                         print("   [!] Max retries reached. Skipping page.")
                     time.sleep(2)
             else:
-                # This 'else' executes if the 'break' in the for loop was never reached (i.e., all retries failed)
                 context.close()
                 continue
 
-            # Random wait to mimic human behavior
             time.sleep(random.uniform(DELAY_MIN, DELAY_MAX))
 
             jobs_on_page = scrape_page(page, url)
@@ -154,17 +139,15 @@ def get_linkedin_jobs(query: str, location: str = "", pages: int = PAGES) -> Lis
 
         browser.close()
 
-    print(f"✅ Finished scraping LinkedIn. Collected {len(scraped)} jobs.")
+    print(f"Finished scraping LinkedIn. Collected {len(scraped)} jobs.")
     return scraped
 
 
-# ----------------------------
 # Entry point
-# ----------------------------
 if __name__ == "__main__":
     from pprint import pprint
 
-    # Test 1: Search with specific location
+    # case1: Search with location
     QUERY_1 = input("Enter the job role you want to search for (e.g., 'Data Engineer'): ").strip()
     LOCATION_1 = input("Enter the location (e.g., 'India, Remote'): ").strip()
 
@@ -176,10 +159,10 @@ if __name__ == "__main__":
 
     print("-" * 30)
 
-    # Test 2: Search without location (default to broad/global search)
+    # case2: Search without location
     QUERY_2 = input("Enter a second job role (no location): ").strip()
 
-    results_2 = get_linkedin_jobs(QUERY_2, pages=1)  # location defaults to ""
+    results_2 = get_linkedin_jobs(QUERY_2, pages=1)
 
     print("\nSample LinkedIn Jobs (Default/Broad Search):")
     pprint(results_2[:3])

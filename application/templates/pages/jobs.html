@@ -37,11 +37,10 @@
 
 {% block scripts %}
   {{ super() }}
-  <!-- Inject the API URL dynamically into a global JS variable -->
-  <script>
-    const SEARCH_JOBS_URL = "{{ url_for('jobs_bp.search_jobs') }}";
-  </script>
 
-  <!-- Load the main search script after the URL is available -->
+  <script>
+    const SEARCH_JOBS_URL = "{{ url_for('apis_bp.search_jobs') }}";
+  </script>
+  
   <script src="{{ url_for('static', filename='js/search.js') }}"></script>
 {% endblock %}

@@ -10,9 +10,7 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException,
 from urllib.parse import quote_plus
 from typing import List, Dict
 
-# -------------------------
 # Selenium Browser Setup
-# -------------------------
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
@@ -21,12 +19,12 @@ USER_AGENTS = [
 
 
 def get_driver():
-    """Sets up and returns a configured Chrome WebDriver instance."""
+    # Sets up and returns a configured Chrome WebDriver instance
     options = Options()
     options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    # options.add_argument("--headless")  # uncomment to run in background
-    options.add_argument("--log-level=3")  # Suppress console logs
+    options.add_argument("--headless")
+    options.add_argument("--log-level=3")
     try:
         driver = webdriver.Chrome(options=options)
         driver.delete_all_cookies()
@@ -36,15 +34,14 @@ def get_driver():
         return None
 
 
-# -------------------------
 # Scraper for Authentic Jobs
-# -------------------------
+
 def get_authentic_jobs(job_role: str, location: str = "", pages: int = 3) -> List[Dict]:
     """
     Scrapes job listings from Authentic Jobs based on job_role and optional location,
     and returns them as a list of dictionaries.
     """
-    print(f"🚀 Starting Authentic Jobs scraper for role: {job_role} in location: {location or 'default'}")
+    print(f"Starting Authentic Jobs scraper for role: {job_role} in location: {location or 'default'}")
 
     driver = get_driver()
     if not driver:
@@ -53,12 +50,10 @@ def get_authentic_jobs(job_role: str, location: str = "", pages: int = 3) -> Lis
     jobs = []
     source_name = "Authentic Jobs"
 
-    # Combine job_role and location for the 'keywords' parameter if location is provided
     search_term = f"{job_role} {location}" if location else job_role
     query = quote_plus(search_term)
 
     for page in range(1, pages + 1):
-        # The search URL uses 'keywords' for the entire search phrase
         url = f"https://authenticjobs.com/jobs/?keywords={query}&page={page}"
         print(f" Scraping page {page}: {url}")
         driver.get(url)
@@ -68,11 +63,11 @@ def get_authentic_jobs(job_role: str, location: str = "", pages: int = 3) -> Lis
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "li.job_listing"))
             )
         except TimeoutException:
-            print(f"⚠️ No job listings found on page {page} or timeout. Stopping.")
+            print(f"No job listings found on page {page} or timeout. Stopping.")
             break
 
         job_lis = driver.find_elements(By.CSS_SELECTOR, "li.job_listing")
-        print(f"  Found {len(job_lis)} jobs on page {page}")
+        print(f"Found {len(job_lis)} jobs on page {page}")
 
         for li in job_lis:
             link = "N/A"
@@ -80,32 +75,32 @@ def get_authentic_jobs(job_role: str, location: str = "", pages: int = 3) -> Lis
             company = "N/A"
             scraped_location = "N/A"
 
-            # 1. Link (Apply Link)
+            # Link (Apply Link)
             try:
                 link_el = li.find_element(By.CSS_SELECTOR, "a[href]")
                 link = link_el.get_attribute("href").strip()
             except NoSuchElementException:
                 continue  # Skip job if no link
 
-            # 2. Title
+            # Title
             try:
                 title = li.find_element(By.CSS_SELECTOR, "div.position h2").text.strip()
             except NoSuchElementException:
                 pass
 
-            # 3. Company
+            # Company
             try:
                 company = li.find_element(By.CSS_SELECTOR, "div.company strong").text.strip()
             except NoSuchElementException:
                 pass
 
-            # 4. Location
+            # Location
             try:
                 scraped_location = li.find_element(By.CSS_SELECTOR, "div.location").text.strip()
             except NoSuchElementException:
                 pass
 
-            # Append job in the requested dictionary format
+            # append job as dict
             jobs.append({
                 "title": title,
                 "company": company,
@@ -117,15 +112,14 @@ def get_authentic_jobs(job_role: str, location: str = "", pages: int = 3) -> Lis
         time.sleep(random.uniform(2, 5))
 
     driver.quit()
-    print(f"✅ Finished scraping Authentic Jobs. Collected {len(jobs)} jobs.")
+    print(f"Finished scraping Authentic Jobs. Collected {len(jobs)} jobs.")
     return jobs
 
 
-# -------------------------
 # Local Execution Test Block
-# -------------------------
+
 if __name__ == "__main__":
-    # Test 1: Search with location (will be added to keywords)
+    # case1: search with location
     job_role_1 = input("Enter the job role for Authentic Jobs (e.g., 'Web Developer'): ").strip()
     job_location_1 = input("Enter the location (e.g., 'San Francisco'): ").strip()
 
@@ -137,7 +131,7 @@ if __name__ == "__main__":
 
     print("-" * 30)
 
-    # Test 2: Search without location
+    # case2: Search without location
     job_role_2 = input("Enter a second job role (no location): ").strip()
     authentic_jobs_2 = get_authentic_jobs(job_role_2, pages=1)
 
