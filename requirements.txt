@@ -6,3 +6,20 @@ pandas
 flask
 python-dotenv
 click
+
+#Backend and Langchain requirements(pip freeze > requirements.txt)
+Flask==3.0.0
+werkzeug==3.0.1
+PyPDF2==3.0.1
+python-docx==1.1.0
+langchain==0.1.0
+langchain-community==0.0.10
+llama-cpp-python==0.2.27
+selenium==4.15.2
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+transformers==4.36.2
+torch==2.1.2
+bitsandbytes==0.41.3
+accelerate==0.25.0
+huggingface-hub==0.20.1
