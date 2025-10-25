@@ -1,7 +1,7 @@
 from flask import Flask
 from . import pages
 from . import api_bp
-from config import Config
+from application.config import Config
 
 
 def create_app():

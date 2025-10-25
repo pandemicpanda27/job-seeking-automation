@@ -1,9 +1,13 @@
 <h5 class="panel-title">Upload Resume</h5>
-<div class="form-group">
-  <input type="file" id="resumeFile" name="resumeFile" accept=".pdf" />
-  <small class="text-muted">PDF files only</small>
+<div id="uploadSection" style="display: block;">
+  <div class="form-group">
+    <input type="file" id="resumeFile" name="resumeFile" accept=".pdf" style="display: none;" />
+    <button id="uploadTrigger" class="btn btn-primary">Upload File</button>
+    <small class="text-muted">PDF files only</small>
 
-  {% include 'components/resume_message.html' %}
+    {% include 'components/resume_message.html' %}
 
-  <div id="uploadFeedback" class="upload-feedback"></div>
+    <div id="uploadFeedback" class="upload-feedback"></div>
+    <div id="parsedContainer" style="margin-top: 20px;"></div>
+  </div>
 </div>

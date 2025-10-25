@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}
+Filtered Jobs List
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="section-title">Matched Jobs</h2>
+
+  <p><strong>Total jobs received:</strong> {{ jobs|length }}</p>
+
+  <div class="job-list">
+    {% for job in jobs %}
+      <div class="job-card">
+        <h3>{{ job.title }}</h3>
+        <p><strong>Company:</strong> {{ job.company }}</p>
+        <p><strong>Location:</strong> {{ job.location }}</p>
+        <p><strong>Match Score:</strong> {{ job.match_score }}</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}

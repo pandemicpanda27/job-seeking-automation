@@ -1,7 +1,8 @@
-pyngrok
-mysql-connector-python
-flask-SQLAlchemy
-sqlalchemy
+scikit-learn
+openpyxl
+pdfminer.six==20221105
+cachetools
+bs4
 pandas
 flask
 python-dotenv

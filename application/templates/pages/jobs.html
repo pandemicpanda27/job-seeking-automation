@@ -39,7 +39,7 @@
   {{ super() }}
 
   <script>
-    const SEARCH_JOBS_URL = "{{ url_for('apis_bp.search_jobs') }}";
+    const SEARCH_JOBS_URL = "{{ url_for('apis_bp.search_jobs_api') }}";
   </script>
   
   <script src="{{ url_for('static', filename='js/search.js') }}"></script>

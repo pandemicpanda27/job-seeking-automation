@@ -1,15 +1,21 @@
+import random
+import time
+from pprint import pprint
+from typing import List, Dict
+from urllib.parse import quote_plus
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from pprint import pprint
+from selenium.common.exceptions import (
+    TimeoutException,
+    NoSuchElementException,
+    WebDriverException,
+    ElementClickInterceptedException
+)
 
-import random
-import time
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
-from typing import List, Dict
-from urllib.parse import quote_plus
+
 
 # Common Browser Options
 
@@ -21,115 +27,207 @@ USER_AGENTS = [
 
 
 def get_driver():
-    # Sets up and returns a configured Chrome WebDriver instance
     options = Options()
     options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--log-level=3")
+    options.add_argument("--log-level=3")  # Suppress console logs
     options.add_argument("--headless")
     try:
         driver = webdriver.Chrome(options=options)
         driver.delete_all_cookies()
+        driver.implicitly_wait(5)
         return driver
     except WebDriverException as e:
         print(f"Failed to initialize WebDriver. Check ChromeDriver version. Error: {e}")
         return None
 
 
-# Scrape Naukri multi page
+# Scrape Naukri
 
 def get_naukri_jobs(job_role: str, location: str = "", pages: int = 3) -> List[Dict]:
-    
     print(f"Starting Naukri scraper for role: {job_role} in location: {location or 'default'}")
-    jobs = []
+
+    # Structure to hold job links and initial data (Phase 1 result)
+    job_links_data = []
     source_name = "Naukri"
 
+    # Initialize driver ONCE
+    driver = get_driver()
+    if not driver:
+        return []
+
+    # Prepare parameters
     role_path = job_role.replace(" ", "-").lower()
-    
     role_query = quote_plus(job_role)
-    
     loc_query = quote_plus(location)
 
-    for page in range(1, pages + 1):
-        
-        base_url_path = f"https://www.naukri.com/{role_path}-jobs-{page}"
+    try:
+        # COLLECT ALL JOB LINKS AND BASIC DATA
+        print("\n--- Phase 1: Collecting Links and Basic Data ---")
+        for page in range(1, pages + 1):
+            base_url_path = f"https://www.naukri.com/{role_path}-jobs-{page}"
+            query_parts = [f"k={role_query}"]
+            if loc_query:
+                query_parts.append(f"l={loc_query}")
 
-        query_parts = [f"k={role_query}"]
-        if loc_query:
-            query_parts.append(f"l={loc_query}")
+            url = base_url_path + "?" + "&".join(query_parts)
+            print(f" Scraping Naukri page {page}: {url}")
 
-        query_string = "?" + "&".join(query_parts)
-        url = base_url_path + query_string
-
-        print(f" Scraping Naukri page {page}: {url}")
-
-        driver = get_driver()
-        if not driver:
-            break
-
-        try:
             driver.get(url)
-            # wait for job listings to load.
-            job_listings = WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.CLASS_NAME, "cust-job-tuple"))
-            )
-        except (TimeoutException, NoSuchElementException):
-            print(f"No jobs found or timed out on Naukri page {page}. Stopping.")
-            driver.quit()
-            break
 
-        for job in job_listings:
-            title = "N/A"
-            link = "N/A"
-            company = "N/A"
-            experience = "N/A"
-            scraped_location = "N/A" 
+            # Handle Cookie/Privacy Policy Banner
+            try:
+                # Using a more robust selector that contains 'I accept'
+                cookie_accept_button = WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'I accept')]"))
+                )
+                cookie_accept_button.click()
+                print("Cookie banner accepted.")
+                time.sleep(0.5)
+            except TimeoutException:
+                print("No cookie banner found or timed out waiting for it. Continuing.")
+            except Exception as e:
+                print(f"Minor error handling cookie banner: {e}")
+
+            # Wait for job listings to load.
+            try:
+                job_listings = WebDriverWait(driver, 10).until(
+                    EC.presence_of_all_elements_located((By.CLASS_NAME, "cust-job-tuple"))
+                )
+            except (TimeoutException, NoSuchElementException):
+                print(f"No jobs found or timed out on Naukri page {page}. Stopping.")
+                break
+
+            for job in job_listings:
+                try:
+                    title_elem = job.find_element(By.CSS_SELECTOR, "a.title")
+                    link = title_elem.get_attribute("href")
+
+                    # Ensure the link is a non-empty string
+                    if not link or not isinstance(link, str):
+                        print(f"Skipping job '{title_elem.text.strip()}' because link is invalid or missing.")
+                        continue 
+                    
+                    # Store link and basic data only if the link is valid
+                    job_links_data.append({
+                        "title": title_elem.text.strip(),
+                        "company": job.find_element(By.CSS_SELECTOR, "a.comp-name").text.strip() if job.find_elements(
+                            By.CSS_SELECTOR, "a.comp-name") else "N/A",
+                        "experience_list": job.find_element(By.CSS_SELECTOR,
+                                                            "span.exp").text.strip() if job.find_elements(
+                            By.CSS_SELECTOR, "span.exp") else "N/A",
+                        "location_list": job.find_element(By.CSS_SELECTOR,
+                                                          "span.loc").text.strip() if job.find_elements(By.CSS_SELECTOR,
+                                                                                                        "span.loc") else "N/A",
+                        "link": link,
+                        "portal": source_name,
+                        "description": "N/A"  # Placeholder for description
+                    })
+
+                except Exception as e:
+                    print(f"Error scraping basic data from list view: {e}. Skipping job.")
+                    continue
+
+            # Use random sleep between pages
+            time.sleep(random.uniform(2, 4))
+
+        print(f"Phase 1 complete. Collected {len(job_links_data)} job links.")
+
+        # SEQUENTIAL NAVIGATION AND DETAIL SCRAPING
+        final_jobs = []
+        print("\n--- Phase 2: Scraping Details Sequentially ---")
+
+        for i, job_data in enumerate(job_links_data):
+            link = job_data['link']
+            print(f" [{i + 1}/{len(job_links_data)}] Visiting: {link}")
 
             try:
-                title_elem = job.find_element(By.CSS_SELECTOR, "a.title")
-                title = title_elem.text.strip()
-                link = title_elem.get_attribute("href")
-            except NoSuchElementException:
-                continue 
+                # Navigate to the individual job page
+                driver.get(link)
 
-            try:
-                company = job.find_element(By.CSS_SELECTOR, "a.comp-name").text.strip()
-            except NoSuchElementException:
-                pass
+                # Scrape details using provided selectors
 
-            try:
-                experience = job.find_element(By.CSS_SELECTOR, "span.exp").text.strip()
-            except NoSuchElementException:
-                pass
+                # Title
+                job_data['title'] = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "h1.styles_jd-header-title__rZwM1"))
+                ).text.strip()
 
-            try:
-                scraped_location = job.find_element(By.CSS_SELECTOR, "span.loc").text.strip()
-            except NoSuchElementException:
-                pass
+                # Company
+                try:
+                    job_data['company'] = driver.find_element(By.CSS_SELECTOR, "a[title$='Careers']").text.strip()
+                except NoSuchElementException:
+                    pass 
 
-                # Append job in the required dictionary format
-            jobs.append({
-                "title": title,
-                "company": company,
-                "location": scraped_location,
-                "link": link,
-                "portal": source_name,
-                "experience": experience
-            })
+                # Experience
+                try:
+                    job_data['experience'] = driver.find_element(By.XPATH,
+                                                                 "//span[contains(text(), 'years') or contains(text(), 'Yrs')]").text.strip()
+                except NoSuchElementException:
+                    job_data['experience'] = job_data.pop('experience_list')  # Use list view data
 
+                # Location
+                try:
+                    job_data['location'] = driver.find_element(By.CSS_SELECTOR, "a[title^='Jobs in ']").text.strip()
+                except NoSuchElementException:
+                    job_data['location'] = job_data.pop('location_list') 
+
+                # Description
+                desc_container = driver.find_element(By.CSS_SELECTOR, "section.styles_job-desc-container__txpYf")
+
+                # Target all immediate child <div> elements
+                desc_divs = desc_container.find_elements(By.TAG_NAME, "div")
+
+                description_parts = []
+                # Iterate through the divs and build the description, excluding the footer
+                for div in desc_divs:
+                    div_class = div.get_attribute('class')
+                    div_text = div.text.strip()
+
+                    # Explicitly skip the footer and ensure the div is not empty
+                    if not div_text:
+                        continue
+                    if "styles_JDC__footer__ZJnPe" in div_class:
+                        continue
+
+                    # We also avoid known elements like the key skills section
+                    if "styles_key-skill" in div_class:
+                        continue
+
+                    description_parts.append(div_text)
+
+                # Concatenate the collected parts
+                job_data['description'] = "\n\n".join(description_parts)
+
+                # Remove temporary list view data keys
+                job_data.pop('experience_list', None)
+                job_data.pop('location_list', None)
+
+                final_jobs.append(job_data)
+
+            except Exception as e:
+                print(f"Skipping job due to critical error on detail page {job_data['title']}: {e}")
+                # Ensure placeholder data is still collected even if description fails
+                job_data['description'] = f"Scrape failed: {type(e).__name__}"
+                job_data.pop('experience_list', None)
+                job_data.pop('location_list', None)
+                final_jobs.append(job_data)
+
+            time.sleep(random.uniform(1, 2)) 
+
+    except Exception as e:
+        print(f"An outer loop error occurred: {e}")
+    finally:
         driver.quit()
-        time.sleep(random.uniform(2, 4))
 
-    print(f"Finished scraping Naukri. Found {len(jobs)} total job listings.")
-    return jobs
+    print(f"\nFinished scraping Naukri. Found {len(final_jobs)} total job listings with details.")
+    return final_jobs
+
 
 
 # Local Execution Test Block
-
 if __name__ == "__main__":
-    from pprint import pprint
 
-    # case1: Search with specific location
+    # case 1: Search with specific location
     job_role_1 = input("Enter the job role you want to search on Naukri (e.g., 'Software Developer'): ").strip()
     job_location_1 = input("Enter the location (e.g., 'Bangalore'): ").strip()
 
@@ -141,10 +239,10 @@ if __name__ == "__main__":
 
     print("-" * 30)
 
-    # case2: Search without location
+    # case 2: Search without location
     job_role_2 = input("Enter a second job role (no location): ").strip()
 
-    naukri_jobs_2 = get_naukri_jobs(job_role_2, pages=1)  # location defaults to ""
+    naukri_jobs_2 = get_naukri_jobs(job_role_2, pages=1)
 
     print("\nSample Naukri Jobs (Default/Broad Search):")
     pprint(naukri_jobs_2[:3])
