@@ -6,6 +6,8 @@ import nltk
 from nltk import word_tokenize, pos_tag, ne_chunk
 from nltk.tree import Tree
 
+from flask import jsonify
+
 # If running first time, uncomment and run these once:
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
@@ -536,6 +538,38 @@ def pred():
         )
 
     return render_template("resumes.html", message="No file uploaded.")
+
+# JSON results
+@app.route('/api/parse', methods=['POST'])
+def api_parse():
+    if 'resume' in request.files:
+        file = request.files['resume']
+        filename = file.filename
+        if filename.lower().endswith('.pdf'):
+            text = pdf_to_text(file)
+        elif filename.lower().endswith('.txt'):
+            text = file.read().decode('utf-8')
+        else:
+            return render_template('resumes.html', message="Invalid file format. Please upload PDF or TXT.")
+
+        # predictions (unchanged)
+        predicted_category = predict_category(text)
+
+        # parsing
+        name = extract_name_from_resume(text)
+        email = extract_email_from_resume(text)
+        phone = extract_contact_number_from_resume(text)
+        extracted_education = extract_education_from_resume(text)
+        extracted_skills = extract_skills_from_resume(text, name=name)
+    
+    return jsonify({
+        'name': name,
+        'email': email,
+        'phone': phone,
+        'category': predicted_category,
+        'skills': extracted_skills,
+        'education': extracted_education
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

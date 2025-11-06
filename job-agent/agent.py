@@ -1,5 +1,6 @@
 import time
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -23,11 +24,16 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('job_application.log'),
+        logging.FileHandler('job_application.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
+
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 
 class Config:
@@ -328,30 +334,89 @@ class JobApplicationAgent:
             job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.base-card")
             
             for card in job_cards[:num_jobs]:
-                try:
-                    title_elem = card.find_element(By.CSS_SELECTOR, "h3.base-search-card__title")
-                    link_elem = card.find_element(By.CSS_SELECTOR, "a.base-card__full-link")
+                # try:
+                #     title_elem = card.find_element(By.CSS_SELECTOR, "h3.base-search-card__title")
+                #     link_elem = card.find_element(By.CSS_SELECTOR, "a.base-card__full-link")
                     
-                    job_url = link_elem.get_attribute('href')
-                    job_title_text = title_elem.text
+                #     job_url = link_elem.get_attribute('href')
+                #     job_title_text = title_elem.textfor card in job_cards[:num_jobs]:
+                try:
+                    # Try multiple selectors for title
+                    title_elem = None
+                    title_selectors = [
+                        "h3.base-search-card__title",
+                        "h3.job-card-list__title",
+                        "a.job-card-container__link",
+                        ".job-card-list__title--link"
+                    ]
+                    
+                    for selector in title_selectors:
+                        try:
+                            title_elem = card.find_element(By.CSS_SELECTOR, selector)
+                            if title_elem and title_elem.text.strip():
+                                break
+                        except NoSuchElementException:
+                            continue
+                    
+                    if not title_elem or not title_elem.text.strip():
+                        logger.debug("Skipping card - no title found")
+                        continue
+                    
+                    # Try multiple selectors for link
+                    link_elem = None
+                    link_selectors = [
+                        "a.base-card__full-link",
+                        "a.job-card-container__link",
+                        "a.job-card-list__title"
+                    ]
+                    
+                    for selector in link_selectors:
+                        try:
+                            link_elem = card.find_element(By.CSS_SELECTOR, selector)
+                            if link_elem:
+                                break
+                        except NoSuchElementException:
+                            continue
+                    
+                    if not link_elem:
+                        logger.debug("Skipping card - no link found")
+                        continue
                     
                     try:
-                        company = card.find_element(By.CSS_SELECTOR, "h4.base-search-card__subtitle").text
+                        company_selectors = [
+                            "h4.base-search-card__subtitle",
+                            "a.job-card-container__company-name",
+                            ".job-card-container__primary-description"
+                        ]
+                        company = "Unknown"
+                        for selector in company_selectors:
+                            try:
+                                comp_elem = card.find_element(By.CSS_SELECTOR, selector)
+                                if comp_elem and comp_elem.text.strip():
+                                    company = comp_elem.text.strip()
+                                    break
+                            except:
+                                continue
                     except:
                         company = "Unknown"
-                    
+
                     try:
-                        loc = card.find_element(By.CSS_SELECTOR, "span.job-search-card__location").text
+                        location_selectors = [
+                            "span.job-search-card__location",
+                            ".job-card-container__metadata-item",
+                            "span.job-card-container__location"
+                        ]
+                        loc = location
+                        for selector in location_selectors:
+                            try:
+                                loc_elem = card.find_element(By.CSS_SELECTOR, selector)
+                                if loc_elem and loc_elem.text.strip():
+                                    loc = loc_elem.text.strip()
+                                    break
+                            except:
+                                continue
                     except:
                         loc = location
-                    
-                    job_listings.append({
-                        'title': job_title_text,
-                        'company': company,
-                        'location': loc,
-                        'url': job_url,
-                        'platform': 'linkedin'
-                    })
                     
                 except Exception as e:
                     logger.debug(f"Could not parse LinkedIn job card: {str(e)}")
@@ -430,10 +495,27 @@ class JobApplicationAgent:
             # Look for apply button
             apply_button = None
             apply_selectors = [
+                # Indeed-specific selectors
+                "//button[contains(text(), 'Apply now')]",
+                "//a[contains(text(), 'Apply now')]",
+                "//div[contains(@class, 'jobsearch-IndeedApplyButton')]//button",
+                "//button[contains(@class, 'indeed-apply-button')]",
+                
+                # Generic "Apply on company site" buttons
+                "//button[contains(text(), 'Apply on company site')]",
+                "//a[contains(text(), 'Apply on company site')]",
+                "//a[contains(@class, 'jobsearch-IndeedApplyButton')]",
+                
+                # Generic apply buttons
                 "//button[contains(translate(text(), 'APPLY', 'apply'), 'apply')]",
                 "//a[contains(translate(text(), 'APPLY', 'apply'), 'apply')]",
                 "//button[contains(@class, 'apply')]",
                 "//button[contains(@id, 'apply')]",
+                
+                # Fallback patterns
+                "//*[@role='button' and contains(text(), 'pply')]",
+                "//span[contains(text(), 'Apply')]/parent::button",
+                "//span[contains(text(), 'Apply')]/parent::a",
             ]
             
             for selector in apply_selectors:
@@ -445,19 +527,43 @@ class JobApplicationAgent:
             
             if not apply_button:
                 logger.warning("No apply button found")
+                logger.debug(f"Current URL: {self.driver.current_url}")
+                logger.debug(f"Page title: {self.driver.title}")
+                
+                # Try to find any buttons/links with text
+                try:
+                    all_buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                    all_links = self.driver.find_elements(By.TAG_NAME, "a")
+                    
+                    button_texts = [b.text for b in all_buttons if b.text.strip()][:10]
+                    link_texts = [a.text for a in all_links if a.text.strip()][:10]
+                    
+                    logger.debug(f"Sample buttons: {button_texts}")
+                    logger.debug(f"Sample links: {link_texts}")
+                except:
+                    pass
+                
                 return False
             
+            # Check if it's an external application button
+            button_text = apply_button.text.lower()
+            is_external = 'company site' in button_text or 'employer site' in button_text
+
             # Click apply button
             try:
                 apply_button.click()
             except ElementClickInterceptedException:
                 # Try JavaScript click
                 self.driver.execute_script("arguments[0].click();", apply_button)
-            
+
             time.sleep(2)
-            
-            # Fill the form
-            form_filled = self.fill_application_form()
+
+            # Handle external vs internal application
+            if is_external:
+                form_filled = self.handle_external_application(job_info)
+            else:
+                # Fill the form on current page
+                form_filled = self.fill_application_form()
             
             if not form_filled:
                 logger.warning("Could not fill any form fields")
@@ -474,7 +580,7 @@ class JobApplicationAgent:
             for selector in submit_selectors:
                 try:
                     submit_btn = self.driver.find_element(By.XPATH, selector)
-                    logger.info(f"✓ Application ready to submit (auto-submit disabled)")
+                    logger.info(f"✓ Application ready to submit")
                     
                     # Log the application
                     self.applications_log.append({
@@ -496,6 +602,77 @@ class JobApplicationAgent:
             
         except Exception as e:
             logger.error(f"Error applying to job: {str(e)}")
+            return False
+    
+    def handle_external_application(self, job_info):
+        """Handle 'Apply on company site' redirects"""
+        try:
+            logger.info("Detected external application - following redirect...")
+            time.sleep(2)
+            
+            # Get current window handle
+            main_window = self.driver.current_window_handle
+            
+            # Check if new tab/window opened
+            if len(self.driver.window_handles) > 1:
+                # Switch to new window
+                for handle in self.driver.window_handles:
+                    if handle != main_window:
+                        self.driver.switch_to.window(handle)
+                        break
+                
+                logger.info(f"Redirected to: {self.driver.current_url}")
+                time.sleep(3)
+                
+                # Try to fill form on external site
+                form_filled = self.fill_application_form()
+                
+                # Look for submit button
+                if form_filled:
+                    submit_selectors = [
+                        "//button[contains(text(), 'Submit')]",
+                        "//button[contains(text(), 'Send')]",
+                        "//input[@type='submit']",
+                        "//button[@type='submit']",
+                    ]
+                    
+                    for selector in submit_selectors:
+                        try:
+                            submit_btn = self.driver.find_element(By.XPATH, selector)
+                            logger.info("Ready to submit on external site (auto-submit disabled)")
+                            
+                            self.applications_log.append({
+                                **job_info,
+                                'timestamp': datetime.now().isoformat(),
+                                'status': 'ready_to_submit_external',
+                                'form_filled': True,
+                                'external_url': self.driver.current_url
+                            })
+                            
+                            # Close external tab and return to main window
+                            self.driver.close()
+                            self.driver.switch_to.window(main_window)
+                            return True
+                        except NoSuchElementException:
+                            continue
+                
+                # Close external tab and return to main window
+                self.driver.close()
+                self.driver.switch_to.window(main_window)
+                return False
+            else:
+                # Stayed in same window - just redirected
+                logger.info(f"Redirected to: {self.driver.current_url}")
+                time.sleep(3)
+                return self.fill_application_form()
+                
+        except Exception as e:
+            logger.error(f"Error handling external application: {str(e)}")
+            # Try to get back to main window
+            try:
+                self.driver.switch_to.window(main_window)
+            except:
+                pass
             return False
     
     def apply_to_jobs_batch(self, job_listings, delay=None):
