@@ -1,0 +1,55 @@
+{
+  "candidate": {
+    "category": "TEACHER",
+    "education": [
+      "The Programme",
+      "B.E.",
+      "The (2010)"
+    ],
+    "email": "ankitsaraf@iima.ac.in",
+    "name": null,
+    "phone": "+91 - 9930492173",
+    "skills": [
+      "Research",
+      "Editing",
+      "Storytelling"
+    ]
+  },
+  "applications": [
+    {
+      "title": "Adjunct Instructor, Business Analytics",
+      "company": "High Point University",
+      "location": "High Point, NC 27268",
+      "url": "https://www.indeed.com/rc/clk?jk=ba906a6d9cec1805&bb=nFwEGPSkMWUi3ALdbv26Q8PdYTSDWPFYM-pcZi0fIWqPsP2BsBAKCI8UkZoS2HBX4d13vCKf0XKk1OLNUfQIN50UTmhBUJwumPpMcxklAEU2Y4MmSdRLbbLjf07lURKxwjaDodaqiCY%3D&xkcb=SoDE67M3rsvFAdyV3R0LbzkdCdPP&fccid=60cc1ce3fbd6f56f&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-06T18:22:20.737587",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Assistant Professor, English",
+      "company": "High Point University",
+      "location": "High Point, NC 27268",
+      "url": "https://www.indeed.com/rc/clk?jk=9a8cbac4fa04ebc2&bb=nFwEGPSkMWUi3ALdbv26Q5706A_ZfYERlGBY2F9A5wBFU5sIQj4REcH4q2W-lRHDzzhD-Tlfn4RjgjUAtm4Gi6JsbHXFIHVmrq1-lJb0DDxiQDeUMLprkAo4o952---uglCXf9p4XCA%3D&xkcb=SoBw67M3rsvFAdyV3R0KbzkdCdPP&fccid=60cc1ce3fbd6f56f&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-06T18:22:35.454414",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Adjunct Instructor, English",
+      "company": "High Point University",
+      "location": "High Point, NC 27268",
+      "url": "https://www.indeed.com/rc/clk?jk=096755fa227cb6d3&bb=nFwEGPSkMWUi3ALdbv26Qzdot3c1VSJi9Zg_mrgwGZsJI6r9phE9jtIPssENX5j5O6nXOsS9FIlb-JiB31IYiC5rhb6l3G5b7D4YZjTHGh46uBWo7gOois-qE861JdYw_SisiM4nt3w%3D&xkcb=SoDt67M3rsvFAdyV3R0JbzkdCdPP&fccid=60cc1ce3fbd6f56f&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-06T18:22:51.478632",
+      "status": "failed",
+      "form_filled": false
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "ready": 0,
+    "failed": 3
+  }
+}

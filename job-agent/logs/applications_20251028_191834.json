@@ -1,0 +1,55 @@
+{
+  "candidate": {
+    "category": "TEACHER",
+    "education": [
+      "The Programme",
+      "B.E.",
+      "The (2010)"
+    ],
+    "email": "ankitsaraf@iima.ac.in",
+    "name": null,
+    "phone": "+91 - 9930492173",
+    "skills": [
+      "Research",
+      "Editing",
+      "Storytelling"
+    ]
+  },
+  "applications": [
+    {
+      "title": "Elementary Teacher",
+      "company": "Brunswick County School District",
+      "location": "Bolivia, NC 28422",
+      "url": "https://www.indeed.com/rc/clk?jk=f41086c391219c4d&bb=5KoAjjsCv28C7hO3iVvR5fSTJJ0lkXqAi5ArJKjxhD5T33fbl3PNdxJQmuydMXRSpozYh9blclQ1VZHLNYDNwEbIHN9BfrnZqYKia8H9LbMiLNexyP2OzOrvKJkL5e8jnDrPcHbq4cQ%3D&xkcb=SoDD67M3rVqV29wrCh0LbzkdCdPP&fccid=c97317063a1bfb99&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-10-28T19:18:04.453088",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Elementary Teacher - Grades 1 - 5",
+      "company": "West Boylston Public Schools",
+      "location": "West Boylston, MA 01583",
+      "url": "https://www.indeed.com/rc/clk?jk=2457254fb6f3dc02&bb=5KoAjjsCv28C7hO3iVvR5THdOfle6eDOkd4KKNwjg3XYaAcE3xyYZNtJ4PJ-BoJtuLY-1ItU5CIfH8SHyZ9F4OiWyMGwFGV9gCxnqX_ZZHLwCNQ9Tttl8D7c7nk1Vtlt5xiYbhV1b6w%3D&xkcb=SoB367M3rVqV29wrCh0KbzkdCdPP&fccid=b576691393275a54&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-10-28T19:18:18.820300",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "1st Grade Teacher (Available 1/5/26)",
+      "company": "Johnston County Public Schools",
+      "location": "Garner, NC 27529",
+      "url": "https://www.indeed.com/rc/clk?jk=2f14bd506d5454e3&bb=5KoAjjsCv28C7hO3iVvR5fZYYR8TlKBvA3VCiac0QrloDODZoMxmpj-k5G6uBA0Q80TjEB7UWnb4_q-NDcw9SkITfuu2CIZjqdquZyUlXSUeFrqtFqellWO194UY93CB4BRr_f2lSN4%3D&xkcb=SoDq67M3rVqV29wrCh0JbzkdCdPP&fccid=7cc250e977c38225&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-10-28T19:18:34.671355",
+      "status": "failed",
+      "form_filled": false
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "ready": 0,
+    "failed": 3
+  }
+}

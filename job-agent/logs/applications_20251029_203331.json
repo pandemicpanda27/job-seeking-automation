@@ -1,0 +1,55 @@
+{
+  "candidate": {
+    "category": "TEACHER",
+    "education": [
+      "The Programme",
+      "B.E.",
+      "The (2010)"
+    ],
+    "email": "ankitsaraf@iima.ac.in",
+    "name": null,
+    "phone": "+91 - 9930492173",
+    "skills": [
+      "Research",
+      "Editing",
+      "Storytelling"
+    ]
+  },
+  "applications": [
+    {
+      "title": "US Mathematics Teacher 26-27",
+      "company": "Miami Country Day School",
+      "location": "Miami, FL 33161",
+      "url": "https://www.indeed.com/rc/clk?jk=d1b43560f4367c05&bb=06bTtBC4Ap95nJ_F2zbE4uoWAFe7rKO6EE-cp-UMgFF5ELis1-41VQYC74SUozubV3UJUDn68MRv_gnhgvP33O5TWVeG67LXWtgzLmbE9EYTgZYMUWpgZlwsla7xw6Oc4V59eX_eg0w%3D&xkcb=SoDH67M3rYH_CuRSwZ0JbzkdCdPP&fccid=35b7c4b6df054b75&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-10-29T20:33:02.173626",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "1st Grade Teacher",
+      "company": "Oak Creek Elementary School",
+      "location": "New Braunfels, TX",
+      "url": "https://www.indeed.com/rc/clk?jk=9aa5f7f5902e3e50&bb=06bTtBC4Ap95nJ_F2zbE4tc2Fg27h01ztIs73dZcqTOR2klH2czGr2sKgntZ26vFOVuUGLZX6LRelXzZKEOySpUwDBVlU7LvuOO3grvSlHvsKzv08vbp4GmyE8crhxiYdoXgrxMnLWY%3D&xkcb=SoBz67M3rYH_CuRSwZ0IbzkdCdPP&fccid=0ebdb7fb164399d9&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-10-29T20:33:17.748610",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Teacher Kindergarten REPLACEMENT - Fern Hill",
+      "company": "Tacoma Public Schools",
+      "location": "Washington State",
+      "url": "https://www.indeed.com/rc/clk?jk=252a1d32f5af210c&bb=06bTtBC4Ap95nJ_F2zbE4qLAWcAsdKF3-ge58G1zAmx81W_td3rSeHY0LDtgqnmjY60JbM8-pctbnw63HIVHSCThzvxSd4uR90-DgaJxvfkSt87SvFjfd0CTjwgkg3YsmNARd9lPSnI%3D&xkcb=SoD967M3rYH_CuRSwZ0PbzkdCdPP&fccid=8b3fe874132f7707&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-10-29T20:33:31.964345",
+      "status": "failed",
+      "form_filled": false
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "ready": 0,
+    "failed": 3
+  }
+}
