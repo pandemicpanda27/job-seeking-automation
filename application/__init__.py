@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, jsonify, send_from_directory
 
 def create_app():
-    base_dir = os.path.dirname(os.path.abspath(__file__))  # Points to 'application/' dir
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     
     app = Flask(__name__,
                 template_folder=os.path.join(base_dir, 'templates'),
@@ -10,13 +10,13 @@ def create_app():
 
     @app.route('/')
     def home():
-        return render_template('index.html')
+        # Point to pages/index.html since your index.html is inside pages/ folder
+        return render_template('pages/index.html')
 
     @app.route('/api/jobs')
     def get_jobs():
         return jsonify({'jobs': []})
     
-    # Serve CSS and JS without changing HTML, mapping /style.css and /script.js
     @app.route('/style.css')
     def serve_style():
         return send_from_directory(os.path.join(base_dir, 'static'), 'style.css')
