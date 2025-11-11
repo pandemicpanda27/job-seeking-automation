@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="JobMatch AI - Real-time AI-powered job search platform">
+    <meta name="theme-color" content="#3b82f6">
+    <title>JobMatch AI | AI-Powered Job Search & Resume Matching</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <i class="fas fa-bullseye"></i>
+                <span>JobMatch AI</span>
+            </div>
+            <ul class="navbar-menu">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#how" class="nav-link">How It Works</a></li>
+            </ul>
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Find Your Perfect Job Match
+                    <span class="gradient-text">Powered by AI</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Search real-time jobs from 20+ platforms. Get AI-matched results based on your resume. 
+                    Apply in seconds.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">50K+</span>
+                        <span class="stat-text">Jobs Indexed</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">20+</span>
+                        <span class="stat-text">Job Boards</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">95%</span>
+                        <span class="stat-text">Accuracy</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="floating-box">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="app-section">
+        <div class="container">
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <h2>Upload Your Resume</h2>
+                    <p>We'll analyze your skills, experience, and preferences instantly</p>
+                </div>
+
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>Drop your resume here</h3>
+                        <p>or <span class="upload-link">click to select</span> a file</p>
+                        <p class="upload-hint">Supports PDF, DOCX, TXT (Max 10MB)</p>
+                        <input type="file" id="resumeInput" accept=".pdf,.docx,.txt" hidden>
+                    </div>
+
+                    <div class="resume-preview" id="resumePreview" style="display: none;">
+                        <div class="preview-success">
+                            <i class="fas fa-check-circle"></i>
+                            <h3 id="resumeFileName">resume.pdf</h3>
+                        </div>
+                        <div class="preview-details">
+                            <div class="detail-row">
+                                <label>Name:</label>
+                                <span id="resumeName">-</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Category:</label>
+                                <span id="resumeCategory">-</span>
+                            </div>
+                            <div class="detail-row">
+                                <label>Experience:</label>
+                                <span id="resumeExperience">-</span>
+                            </div>
+                            <div class="skills-box">
+                                <label>Skills Detected:</label>
+                                <div class="skills-list" id="resumeSkills"></div>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" id="changeResumeBtn">Change Resume</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <h2>Search for Jobs</h2>
+                    <p>Enter your desired job title and location</p>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-grid">
+                        <div class="input-group">
+                            <label for="jobTitle">Job Title</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-briefcase"></i>
+                                <input 
+                                    type="text" 
+                                    id="jobTitle" 
+                                    placeholder="Python Developer, Data Scientist..."
+                                    class="input-field"
+                                    disabled
+                                >
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="location">Location</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <input 
+                                    type="text" 
+                                    id="location" 
+                                    placeholder="Bangalore, Mumbai, Remote..."
+                                    class="input-field"
+                                    disabled
+                                >
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="jobType">Job Type (Optional)</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-filter"></i>
+                                <select id="jobType" class="input-field" disabled>
+                                    <option value="">All Types</option>
+                                    <option value="fulltime">Full-time</option>
+                                    <option value="parttime">Part-time</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="remote">Remote</option>
+                                    <option value="internship">Internship</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="salaryMin">Salary Range (Optional)</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-dollar-sign"></i>
+                                <input 
+                                    type="text" 
+                                    id="salaryMin" 
+                                    placeholder="Min - Max (e.g., 30-60)"
+                                    class="input-field"
+                                    disabled
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="searchBtn" class="btn-primary" disabled>
+                        <i class="fas fa-search"></i>
+                        <span>Search Jobs in Real-Time</span>
+                        <span class="spinner" id="searchSpinner" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="step-card" id="resultsCard" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <h2>Your Matches</h2>
+                    <p>AI-ranked results based on your resume</p>
+                </div>
+
+                <div class="results-section">
+                    <div class="results-toolbar">
+                        <div class="filter-group">
+                            <span class="filter-label">Filter by Match:</span>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-filter="all">
+                                    <i class="fas fa-list"></i> All
+                                    <span class="count" data-count="all">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="90">
+                                    <i class="fas fa-star"></i> 90%+
+                                    <span class="count" data-count="90">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="80">
+                                    <i class="fas fa-star-half"></i> 80%+
+                                    <span class="count" data-count="80">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="60">
+                                    <i class="fas fa-thumbs-up"></i> 60%+
+                                    <span class="count" data-count="60">0</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="sort-group">
+                            <select id="sortBy" class="input-field">
+                                <option value="match">Sort by Match %</option>
+                                <option value="recent">Sort by Recent</option>
+                                <option value="salary">Sort by Salary</option>
+                                <option value="company">Sort by Company</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="jobs-container" id="jobsContainer">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Searching across 20+ job boards...</p>
+                        </div>
+                    </div>
+
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <i class="fas fa-search"></i>
+                        <h3>No jobs found</h3>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section" id="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose JobMatch AI?</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-rocket"></i></div>
+                    <h3>Real-Time Search</h3>
+                    <p>Search across 20+ job boards simultaneously and get results instantly.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                    <h3>AI Powered</h3>
+                    <p>Advanced matching algorithm with 95% accuracy for perfect job fit.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Privacy Protected</h3>
+                    <p>Your resume data is encrypted and never shared with third parties.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                    <h3>Lightning Fast</h3>
+                    <p>Optimized for speed - get results in seconds, not hours.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <h3>Smart Analytics</h3>
+                    <p>Track applications and get insights on job market trends.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+                    <h3>Mobile Ready</h3>
+                    <p>Works perfectly on desktop, tablet, and mobile devices.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-section" id="how">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="how-card">
+                    <div class="how-number">1</div>
+                    <h3>Upload Resume</h3>
+                    <p>Share your resume in PDF or DOCX format. We instantly extract your skills and experience.</p>
+                </div>
+                <div class="how-card">
+                    <div class="how-number">2</div>
+                    <h3>Smart Search</h3>
+                    <p>Enter your desired job title and location. We search 20+ platforms simultaneously.</p>
+                </div>
+                <div class="how-card">
+                    <div class="how-number">3</div>
+                    <h3>AI Matching</h3>
+                    <p>Our AI analyzes and matches jobs to your profile with precision scoring.</p>
+                </div>
+                <div class="how-card">
+                    <div class="how-number">4</div>
+                    <h3>One-Click Apply</h3>
+                    <p>View details and apply directly to your best matches in seconds.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal" id="jobModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4>JobMatch AI</h4>
+                    <p>Find your perfect job match with AI-powered search and matching.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#how">How It Works</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Privacy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Get Started</h4>
+                    <p>Ready to find your dream job?</p>
+                    <button class="btn-primary" style="width: 100%; margin-top: 10px;">Start Now</button>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 JobMatch AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
