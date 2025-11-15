@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input[type="file"],
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .job-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .job-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .job-company {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Job Application Agent</h1>
+        
+        <div class="nav-tabs">
+            <button class="tab active" onclick="switchTab('search')">Search Jobs</button>
+            <button class="tab" onclick="switchTab('apply')">Apply to Jobs</button>
+            <button class="tab" onclick="switchTab('auto')">Auto Apply</button>
+            <button class="tab" onclick="switchTab('logs')">View Logs</button>
+        </div>
+        
+        <!-- Search Jobs Tab -->
+        <div id="search-tab" class="tab-content active">
+            <form id="searchForm">
+                <div class="form-group">
+                    <label>Upload Resume (PDF or TXT)</label>
+                    <input type="file" id="searchResume" name="resume" accept=".pdf,.txt" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Job Title (Optional - uses resume category if empty)</label>
+                    <input type="text" name="job_title" placeholder="e.g., Teacher, Software Engineer">
+                </div>
+                
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" name="location" value="United States" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Jobs</label>
+                    <input type="number" name="num_jobs" value="10" min="1" max="50">
+                </div>
+                
+                <div class="form-group">
+                    <label>Platforms</label>
+                    <select name="platforms">
+                        <option value="indeed">Indeed Only</option>
+                        <option value="linkedin">LinkedIn Only</option>
+                        <option value="indeed,linkedin">Both</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    🔍 Search Jobs
+                </button>
+            </form>
+        </div>
+        
+        <!-- Apply to Jobs Tab -->
+        <div id="apply-tab" class="tab-content">
+            <form id="applyForm">
+                <div class="form-group">
+                    <label>Upload Resume (PDF or TXT)</label>
+                    <input type="file" id="applyResume" name="resume" accept=".pdf,.txt" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Job URLs (comma-separated)</label>
+                    <textarea name="job_urls" rows="4" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;" placeholder="https://indeed.com/job1, https://indeed.com/job2" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" name="location" value="United States">
+                </div>
+                
+                <div class="form-group">
+                    <label>Delay Between Applications (seconds)</label>
+                    <input type="number" name="delay" value="10" min="5" max="60">
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    📝 Apply to Jobs
+                </button>
+            </form>
+        </div>
+        
+        <!-- Auto Apply Tab -->
+        <div id="auto-tab" class="tab-content">
+            <form id="autoApplyForm">
+                <div class="form-group">
+                    <label>Upload Resume (PDF or TXT)</label>
+                    <input type="file" id="autoResume" name="resume" accept=".pdf,.txt" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Job Title (Optional)</label>
+                    <input type="text" name="job_title" placeholder="e.g., Teacher">
+                </div>
+                
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" name="location" value="United States" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Jobs to Apply</label>
+                    <input type="number" name="num_jobs" value="5" min="1" max="20">
+                </div>
+                
+                <div class="form-group">
+                    <label>Platforms</label>
+                    <select name="platforms">
+                        <option value="indeed">Indeed Only</option>
+                        <option value="linkedin">LinkedIn Only</option>
+                        <option value="indeed,linkedin">Both</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Delay Between Applications (seconds)</label>
+                    <input type="number" name="delay" value="10" min="5" max="60">
+                </div>
+                
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                    🚀 Search & Apply Automatically
+                </button>
+            </form>
+        </div>
+        
+        <!-- Logs Tab -->
+        <div id="logs-tab" class="tab-content">
+            <button onclick="loadLogs()" class="btn-secondary" style="width: 100%; margin-bottom: 20px;">
+                🔄 Refresh Logs
+            </button>
+            <div id="logsList"></div>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">Processing... This may take a few minutes</p>
+        </div>
+        
+        <!-- Results -->
+        <div class="results" id="results"></div>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all tab buttons
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Clear results
+            document.getElementById('results').classList.remove('show');
+        }
+        
+        // Search Jobs Form
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/search-jobs', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displaySearchResults(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+        
+        // Apply Jobs Form
+        document.getElementById('applyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/apply-jobs', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayApplicationResults(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+        
+        // Auto Apply Form
+        document.getElementById('autoApplyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('results').classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/auto-apply', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayApplicationResults(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        });
+        
+        function displaySearchResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <h3>Found ${data.jobs_found} Jobs</h3>
+                <p><strong>Candidate:</strong> ${data.candidate.name}</p>
+                <p><strong>Category:</strong> ${data.candidate.category}</p>
+                <hr style="margin: 20px 0;">
+            `;
+            
+            data.jobs.forEach(job => {
+                html += `
+                    <div class="job-card">
+                        <div class="job-title">${job.title}</div>
+                        <div class="job-company">${job.company} • ${job.location}</div>
+                        <div style="margin-top: 8px;">
+                            <a href="${job.url}" target="_blank" style="color: #667eea; text-decoration: none;">View Job →</a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+        }
+        
+        function displayApplicationResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <h3>Application Summary</h3>
+                <p><strong>Candidate:</strong> ${data.candidate.name}</p>
+                <p><strong>Total Applications:</strong> ${data.total_applications}</p>
+                <p><strong>Successful:</strong> ${data.successful}</p>
+                <p><strong>Failed:</strong> ${data.failed}</p>
+                <hr style="margin: 20px 0;">
+            `;
+            
+            data.applications.forEach(app => {
+                const statusClass = app.status.includes('ready') ? 'status-success' : 'status-failed';
+                const statusText = app.status.includes('ready') ? 'Ready to Submit' : 'Failed';
+                
+                html += `
+                    <div class="job-card">
+                        <div class="job-title">${app.title}</div>
+                        <div class="job-company">${app.company} • ${app.location}</div>
+                        <span class="status ${statusClass}">${statusText}</span>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+        }
+        
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 8px;">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+            resultsDiv.classList.add('show');
+        }
+        
+        async function loadLogs() {
+            document.getElementById('loading').classList.add('show');
+            
+            try {
+                const response = await fetch('/api/application-logs');
+                const data = await response.json();
+                
+                const logsDiv = document.getElementById('logsList');
+                
+                if (data.logs.length === 0) {
+                    logsDiv.innerHTML = '<p style="text-align: center; color: #666;">No logs found</p>';
+                } else {
+                    let html = '';
+                    data.logs.forEach(log => {
+                        html += `
+                            <div class="job-card">
+                                <div class="job-title">${log.candidate || 'Unknown'}</div>
+                                <div class="job-company">
+                                    Timestamp: ${log.timestamp}<br>
+                                    Total: ${log.summary.total} | 
+                                    Ready: ${log.summary.ready} | 
+                                    Failed: ${log.summary.failed}
+                                </div>
+                                <button onclick="viewLogDetail('${log.filename}')" class="btn-secondary" style="margin-top: 10px; padding: 8px 16px;">
+                                    View Details
+                                </button>
+                            </div>
+                        `;
+                    });
+                    logsDiv.innerHTML = html;
+                }
+            } catch (error) {
+                document.getElementById('logsList').innerHTML = `<p style="color: red;">Error loading logs</p>`;
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+        
+        async function viewLogDetail(filename) {
+            try {
+                const response = await fetch(`/api/application-logs/${filename}`);
+                const data = await response.json();
+                
+                alert(JSON.stringify(data, null, 2));
+            } catch (error) {
+                alert('Error loading log details');
+            }
+        }
+        
+        // Load logs on page load if on logs tab
+        window.addEventListener('load', () => {
+            if (document.getElementById('logs-tab').classList.contains('active')) {
+                loadLogs();
+            }
+        });
+    </script>
+</body>
+</html>

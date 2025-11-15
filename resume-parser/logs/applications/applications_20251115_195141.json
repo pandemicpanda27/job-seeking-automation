@@ -1,0 +1,73 @@
+{
+  "candidate": {
+    "name": "Ankit Sara F",
+    "email": "ankitsaraf@iima.ac.in",
+    "phone": "+91 - 9930492173",
+    "category": "TEACHER",
+    "skills": [
+      "Research",
+      "Editing",
+      "Storytelling"
+    ],
+    "education": [
+      "B.E in the | Azim Premji University (2010)"
+    ]
+  },
+  "applications": [
+    {
+      "title": "Preschool Teacher",
+      "company": "Dynamic Learning Academy",
+      "location": "Charlotte, NC 28214 \n(Wildwood area)",
+      "url": "https://www.indeed.com/rc/clk?jk=4c684730c8aad5ee&bb=L7G5P8EFzgG1tdTV-tA1N93h_7BSSxxA5DIM3TQtxjG09lX_RItQ3pJG5HvaOZ0-VyGPCyBsDeMCC_aCnRgfRVsnKWtLcRPI5KeUU_hfQwAKUqDiGJLn4GR9O_DQSMp_OCZp_Q5IY2Q%3D&xkcb=SoDq67M3qD0SFKzSx50LbzkdCdPP&fccid=ba7806f71d18a479&cmp=De-La-Rosa-Tutoring-Service-LLC&ti=Preschool+Teacher&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-15T19:50:47.514264",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Certified Group Fitness Instructor",
+      "company": "Balance for Life Fitness Center",
+      "location": "Saint Paul, MN 55112",
+      "url": "https://www.indeed.com/rc/clk?jk=fe6eea0945bae832&bb=L7G5P8EFzgG1tdTV-tA1N2HCjLNcudZ4Bv0NZe9WGnqduGBQvaTbeWyTUvFQsQY3nzZrgzsfgtgLA0XYaVXCOQ7LVmW9C-iT0pwYbwCZIUYjkydJAC4X6976OLry-vKjUCOKDRglF-n972pM-avJazi6rL9TJeTV&xkcb=SoBe67M3qD0SFKzSx50KbzkdCdPP&fccid=4dc4bf0c993efea9&cmp=Balance-for-Life-Fitness-Center&ti=Fitness+Instructor&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-15T19:51:00.871434",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "",
+      "company": "",
+      "location": "",
+      "url": "https://www.indeed.com/viewjob?jk=a1b2c3d4e5f67890",
+      "platform": "indeed",
+      "timestamp": "2025-11-15T19:51:14.410805",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Nail Technician Instructor",
+      "company": "Institute for Medical Aesthetics & Laser- IMAGE",
+      "location": "North Fort Myers, FL 33903",
+      "url": "https://www.indeed.com/rc/clk?jk=d65288362cd265c7&bb=L7G5P8EFzgG1tdTV-tA1N48ct2yqba_-CothCz9FVBXRwzRyIRPN4dgAEWhjZmejuthmuZ1AVPPW0FLxmqZJ6cR3jRWeJfQv04LHEVXMnUlJvjuvlFsO9X2F1_c4Vsj-rHt27YFFeATXHOYSrDwNHQ%3D%3D&xkcb=SoDD67M3qD0SFKzSx50JbzkdCdPP&fccid=ef491923b142c756&cmp=Skin-Spot-Laser-Club&ti=Nail+Technician&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-15T19:51:27.880855",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "TEACHER I",
+      "company": "Child Crisis Arizona",
+      "location": "Mesa, AZ 85201 \n(Northwest area)",
+      "url": "https://www.indeed.com/rc/clk?jk=65987ed5ee4adae0&bb=L7G5P8EFzgG1tdTV-tA1N5RnSYEby5QBn6f5qXiROuwZoJ6Latos_czirRMQ0u9x51hp6P7iUIkYp-ztFlX3CebYo_p1jyFp8yI0i4fuv-xh05xutmvIB1yey0n7W6x2U4Z5ufMkIiw%3D&xkcb=SoB367M3qD0SFKzSx50IbzkdCdPP&fccid=cf74640bf990ea2b&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-15T19:51:41.429432",
+      "status": "failed",
+      "form_filled": false
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "ready": 0,
+    "failed": 5
+  }
+}

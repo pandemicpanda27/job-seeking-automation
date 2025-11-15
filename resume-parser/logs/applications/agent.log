@@ -1,0 +1,27 @@
+2025-11-15 19:33:18,437 - INFO - WebDriver initialized
+2025-11-15 19:33:18,438 - INFO - Searching Indeed: TEACHER in United States
+2025-11-15 19:33:24,090 - INFO - Found 10 jobs on Indeed
+2025-11-15 19:33:24,090 - INFO - Searching LinkedIn: TEACHER in United States
+2025-11-15 19:33:33,388 - INFO - Found 10 jobs on LinkedIn
+2025-11-15 19:33:35,559 - INFO - WebDriver closed
+2025-11-15 19:50:39,210 - INFO - WebDriver initialized
+2025-11-15 19:50:39,211 - INFO - Searching Indeed: TEACHER in United States
+2025-11-15 19:50:43,840 - INFO - Found 5 jobs on Indeed
+2025-11-15 19:50:43,840 - INFO - Processing job 1/5
+2025-11-15 19:50:43,840 - INFO - Applying to: Preschool Teacher at Dynamic Learning Academy
+2025-11-15 19:50:47,509 - WARNING - No apply button found
+2025-11-15 19:50:57,515 - INFO - Processing job 2/5
+2025-11-15 19:50:57,515 - INFO - Applying to: Certified Group Fitness Instructor at Balance for Life Fitness Center
+2025-11-15 19:51:00,867 - WARNING - No apply button found
+2025-11-15 19:51:10,871 - INFO - Processing job 3/5
+2025-11-15 19:51:10,871 - INFO - Applying to:  at 
+2025-11-15 19:51:14,407 - WARNING - No apply button found
+2025-11-15 19:51:24,412 - INFO - Processing job 4/5
+2025-11-15 19:51:24,412 - INFO - Applying to: Nail Technician Instructor at Institute for Medical Aesthetics & Laser- IMAGE
+2025-11-15 19:51:27,876 - WARNING - No apply button found
+2025-11-15 19:51:37,881 - INFO - Processing job 5/5
+2025-11-15 19:51:37,881 - INFO - Applying to: TEACHER I at Child Crisis Arizona
+2025-11-15 19:51:41,422 - WARNING - No apply button found
+2025-11-15 19:51:41,429 - INFO - Batch complete: 0 ready, 5 failed
+2025-11-15 19:51:41,433 - INFO - Log saved to: C:\Users\pokef\Documents\ML Projects\job-seeking-automation\resume-parser\logs\applications\applications_20251115_195141.json
+2025-11-15 19:51:43,624 - INFO - WebDriver closed

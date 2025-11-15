@@ -1,5 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, File, UploadFile, Form, BackgroundTasks
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from PyPDF2 import PdfReader
@@ -8,13 +8,67 @@ import pickle
 import nltk
 from nltk import word_tokenize, pos_tag, ne_chunk
 from nltk.tree import Tree
+
+# Miscellaneous imports
 import unicodedata
+from typing import Optional, List
+import asyncio
+from datetime import datetime
+import json
+from pathlib import Path
+import logging
+import sys
+
+#Selenium imports
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import (
+    TimeoutException, 
+    NoSuchElementException,
+    ElementClickInterceptedException,
+    StaleElementReferenceException
+)
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+import time
+import os
 
 # If first run, uncomment and run once
 # nltk.download('punkt')
 # nltk.download('averaged_perceptron_tagger')
 # nltk.download('maxent_ne_chunker')
 # nltk.download('words')
+
+# ===================== JOB AGENT CONFIGURATION ==========================
+class JobAgentConfig:
+    """Configuration for job application agent"""
+    BASE_DIR = Path(__file__).parent
+    LOGS_DIR = BASE_DIR / "logs" / "applications"
+    RESUME_STORAGE = BASE_DIR / "resumes"
+    
+    DEFAULT_DELAY = 10
+    MAX_APPLICATIONS_PER_SESSION = 20
+    TIMEOUT = 15
+    
+    # Create directories
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    RESUME_STORAGE.mkdir(parents=True, exist_ok=True)
+
+# Setup logging for job agent
+job_agent_logger = logging.getLogger('job_agent')
+job_agent_logger.setLevel(logging.INFO)
+
+handler = logging.FileHandler(JobAgentConfig.LOGS_DIR / 'agent.log', encoding='utf-8')
+handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+job_agent_logger.addHandler(handler)
+
+# Fix console encoding for Windows
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 app = FastAPI()
 
@@ -24,6 +78,564 @@ templates = Jinja2Templates(directory="templates")
 rf_classifier_categorization = pickle.load(open('model/rf_classifier_categorization.pkl', 'rb'))
 tfidf_vectorizer_categorization = pickle.load(open('model/tfidf_vectorizer_categorization.pkl', 'rb'))
 
+# ===================== FORM FILLER UTILITY ==========================
+class FormFiller:
+    """Smart form filling utility"""
+    
+    FIELD_PATTERNS = {
+        'full_name': [
+            'name', 'full-name', 'fullname', 'full_name', 
+            'applicant-name', 'applicantname', 'your-name'
+        ],
+        'first_name': [
+            'first-name', 'firstname', 'first_name', 
+            'fname', 'given-name', 'givenname'
+        ],
+        'last_name': [
+            'last-name', 'lastname', 'last_name', 
+            'lname', 'surname', 'family-name'
+        ],
+        'email': [
+            'email', 'e-mail', 'email-address', 
+            'emailaddress', 'mail', 'your-email'
+        ],
+        'phone': [
+            'phone', 'telephone', 'mobile', 'contact',
+            'phone-number', 'phonenumber', 'tel', 'cell'
+        ],
+        'resume': [
+            'resume', 'cv', 'upload-resume', 'file', 
+            'attachment', 'document'
+        ],
+    }
+    
+    @staticmethod
+    def find_field(driver, field_type, timeout=5):
+        """Find form field by multiple strategies"""
+        patterns = FormFiller.FIELD_PATTERNS.get(field_type, [])
+        
+        for pattern in patterns:
+            # Try by ID
+            try:
+                return driver.find_element(By.ID, pattern)
+            except NoSuchElementException:
+                pass
+            
+            # Try by name
+            try:
+                return driver.find_element(By.NAME, pattern)
+            except NoSuchElementException:
+                pass
+            
+            # Try by placeholder
+            try:
+                return driver.find_element(By.XPATH, f"//*[contains(@placeholder, '{pattern}')]")
+            except NoSuchElementException:
+                pass
+            
+            # Try partial match
+            try:
+                return driver.find_element(By.XPATH, f"//*[contains(@id, '{pattern}') or contains(@name, '{pattern}')]")
+            except NoSuchElementException:
+                pass
+        
+        return None
+    
+    @staticmethod
+    def fill_field(element, value, clear_first=True):
+        """Safely fill a form field"""
+        try:
+            if clear_first:
+                element.clear()
+            element.send_keys(value)
+            return True
+        except Exception as e:
+            job_agent_logger.warning(f"Could not fill field: {str(e)}")
+            return False
+    
+    @staticmethod
+    def upload_file(element, file_path):
+        """Upload file to input element"""
+        try:
+            abs_path = os.path.abspath(file_path)
+            if not os.path.exists(abs_path):
+                job_agent_logger.error(f"File not found: {abs_path}")
+                return False
+            element.send_keys(abs_path)
+            return True
+        except Exception as e:
+            job_agent_logger.error(f"Could not upload file: {str(e)}")
+            return False
+
+# ===================== JOB APPLICATION AGENT ==========================
+class JobApplicationAgent:
+    """Main job application agent"""
+    
+    def __init__(self, candidate_data, resume_path, config=None):
+        self.config = config or JobAgentConfig()
+        self.candidate_data = candidate_data
+        self.resume_path = Path(resume_path)
+        self.driver = None
+        self.applications_log = []
+        self.form_filler = FormFiller()
+        
+    def setup_driver(self, headless=False):
+        """Setup Chrome WebDriver"""
+        options = webdriver.ChromeOptions()
+        
+        if headless:
+            options.add_argument('--headless')
+        
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+        options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+        
+        service = Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=service, options=options)
+        self.driver.maximize_window()
+        
+        job_agent_logger.info("WebDriver initialized")
+        
+    def search_jobs_indeed(self, job_title=None, location=None, num_jobs=10):
+        """Search for jobs on Indeed"""
+        job_title = job_title or self.candidate_data.get('category', 'Teacher')
+        location = location or 'United States'
+        
+        try:
+            base_url = "https://www.indeed.com/jobs"
+            params = {
+                'q': job_title,
+                'l': location,
+                'fromage': '7',
+                'sort': 'date'
+            }
+            
+            query_string = '&'.join([f"{k}={v.replace(' ', '+')}" for k, v in params.items()])
+            search_url = f"{base_url}?{query_string}"
+            
+            job_agent_logger.info(f"Searching Indeed: {job_title} in {location}")
+            self.driver.get(search_url)
+            time.sleep(3)
+            
+            wait = WebDriverWait(self.driver, self.config.TIMEOUT)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.job_seen_beacon")))
+            
+            job_listings = []
+            job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.job_seen_beacon")
+            
+            for card in job_cards[:num_jobs]:
+                try:
+                    title_elem = card.find_element(By.CSS_SELECTOR, "h2.jobTitle a")
+                    job_url = title_elem.get_attribute('href')
+                    job_title_text = title_elem.text
+                    
+                    try:
+                        company = card.find_element(By.CSS_SELECTOR, "span[data-testid='company-name']").text
+                    except:
+                        company = "Unknown"
+                    
+                    try:
+                        loc = card.find_element(By.CSS_SELECTOR, "div[data-testid='text-location']").text
+                    except:
+                        loc = location
+                    
+                    job_listings.append({
+                        'title': job_title_text,
+                        'company': company,
+                        'location': loc,
+                        'url': job_url,
+                        'platform': 'indeed'
+                    })
+                    
+                except Exception as e:
+                    continue
+            
+            job_agent_logger.info(f"Found {len(job_listings)} jobs on Indeed")
+            return job_listings
+            
+        except Exception as e:
+            job_agent_logger.error(f"Error searching Indeed: {str(e)}")
+            return []
+    
+    def search_jobs_linkedin(self, job_title=None, location=None, num_jobs=10):
+        """Search for jobs on LinkedIn"""
+        job_title = job_title or self.candidate_data.get('category', 'Teacher')
+        location = location or 'United States'
+        
+        try:
+            base_url = "https://www.linkedin.com/jobs/search/"
+            search_url = f"{base_url}?keywords={job_title.replace(' ', '%20')}&location={location.replace(' ', '%20')}&f_TPR=r604800&sortBy=DD"
+            
+            job_agent_logger.info(f"Searching LinkedIn: {job_title} in {location}")
+            self.driver.get(search_url)
+            time.sleep(4)
+            
+            for _ in range(3):
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(1)
+            
+            job_listings = []
+            job_cards = self.driver.find_elements(By.CSS_SELECTOR, "div.base-card")
+            
+            for card in job_cards[:num_jobs]:
+                try:
+                    title_elem = None
+                    title_selectors = [
+                        "h3.base-search-card__title",
+                        "h3.job-card-list__title",
+                        "a.job-card-container__link"
+                    ]
+                    
+                    for selector in title_selectors:
+                        try:
+                            title_elem = card.find_element(By.CSS_SELECTOR, selector)
+                            if title_elem and title_elem.text.strip():
+                                break
+                        except:
+                            continue
+                    
+                    if not title_elem or not title_elem.text.strip():
+                        continue
+                    
+                    link_elem = None
+                    link_selectors = [
+                        "a.base-card__full-link",
+                        "a.job-card-container__link"
+                    ]
+                    
+                    for selector in link_selectors:
+                        try:
+                            link_elem = card.find_element(By.CSS_SELECTOR, selector)
+                            if link_elem:
+                                break
+                        except:
+                            continue
+                    
+                    if not link_elem:
+                        continue
+                    
+                    job_url = link_elem.get_attribute('href')
+                    job_title_text = title_elem.text
+                    
+                    company = "Unknown"
+                    company_selectors = [
+                        "h4.base-search-card__subtitle",
+                        "a.job-card-container__company-name"
+                    ]
+                    for selector in company_selectors:
+                        try:
+                            comp_elem = card.find_element(By.CSS_SELECTOR, selector)
+                            if comp_elem and comp_elem.text.strip():
+                                company = comp_elem.text.strip()
+                                break
+                        except:
+                            continue
+                    
+                    loc = location
+                    location_selectors = [
+                        "span.job-search-card__location",
+                        ".job-card-container__metadata-item"
+                    ]
+                    for selector in location_selectors:
+                        try:
+                            loc_elem = card.find_element(By.CSS_SELECTOR, selector)
+                            if loc_elem and loc_elem.text.strip():
+                                loc = loc_elem.text.strip()
+                                break
+                        except:
+                            continue
+                    
+                    job_listings.append({
+                        'title': job_title_text,
+                        'company': company,
+                        'location': loc,
+                        'url': job_url,
+                        'platform': 'linkedin'
+                    })
+                    
+                except Exception as e:
+                    continue
+            
+            job_agent_logger.info(f"Found {len(job_listings)} jobs on LinkedIn")
+            return job_listings
+            
+        except Exception as e:
+            job_agent_logger.error(f"Error searching LinkedIn: {str(e)}")
+            return []
+    
+    def fill_application_form(self):
+        """Fill out job application form"""
+        try:
+            name = self.candidate_data.get('name', '')
+            name_parts = name.split() if name else []
+            first_name = name_parts[0] if name_parts else ''
+            last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
+            
+            filled_fields = []
+            
+            # Try full name
+            full_name_field = self.form_filler.find_field(self.driver, 'full_name')
+            if full_name_field:
+                if self.form_filler.fill_field(full_name_field, name):
+                    filled_fields.append('full_name')
+            else:
+                # Try first/last separately
+                first_name_field = self.form_filler.find_field(self.driver, 'first_name')
+                if first_name_field and self.form_filler.fill_field(first_name_field, first_name):
+                    filled_fields.append('first_name')
+                
+                last_name_field = self.form_filler.find_field(self.driver, 'last_name')
+                if last_name_field and self.form_filler.fill_field(last_name_field, last_name):
+                    filled_fields.append('last_name')
+            
+            # Fill email
+            email_field = self.form_filler.find_field(self.driver, 'email')
+            if email_field:
+                email = self.candidate_data.get('email', '')
+                if self.form_filler.fill_field(email_field, email):
+                    filled_fields.append('email')
+            
+            # Fill phone
+            phone_field = self.form_filler.find_field(self.driver, 'phone')
+            if phone_field:
+                phone = self.candidate_data.get('phone', '')
+                if self.form_filler.fill_field(phone_field, phone):
+                    filled_fields.append('phone')
+            
+            # Upload resume
+            resume_field = self.form_filler.find_field(self.driver, 'resume')
+            if resume_field:
+                if self.form_filler.upload_file(resume_field, str(self.resume_path)):
+                    filled_fields.append('resume')
+            
+            job_agent_logger.info(f"Filled fields: {', '.join(filled_fields)}")
+            return len(filled_fields) > 0
+            
+        except Exception as e:
+            job_agent_logger.error(f"Error filling form: {str(e)}")
+            return False
+    
+    def handle_external_application(self, job_info):
+        """Handle 'Apply on company site' redirects"""
+        try:
+            job_agent_logger.info("Detected external application - following redirect...")
+            time.sleep(2)
+            
+            main_window = self.driver.current_window_handle
+            
+            if len(self.driver.window_handles) > 1:
+                for handle in self.driver.window_handles:
+                    if handle != main_window:
+                        self.driver.switch_to.window(handle)
+                        break
+                
+                job_agent_logger.info(f"Redirected to: {self.driver.current_url}")
+                time.sleep(3)
+                
+                form_filled = self.fill_application_form()
+                
+                if form_filled:
+                    submit_selectors = [
+                        "//button[contains(text(), 'Submit')]",
+                        "//button[contains(text(), 'Send')]",
+                        "//input[@type='submit']",
+                        "//button[@type='submit']",
+                    ]
+                    
+                    for selector in submit_selectors:
+                        try:
+                            submit_btn = self.driver.find_element(By.XPATH, selector)
+                            job_agent_logger.info("Ready to submit on external site")
+                            
+                            self.applications_log.append({
+                                **job_info,
+                                'timestamp': datetime.now().isoformat(),
+                                'status': 'ready_to_submit_external',
+                                'form_filled': True,
+                                'external_url': self.driver.current_url
+                            })
+                            
+                            self.driver.close()
+                            self.driver.switch_to.window(main_window)
+                            return True
+                        except NoSuchElementException:
+                            continue
+                
+                self.driver.close()
+                self.driver.switch_to.window(main_window)
+                return False
+            else:
+                job_agent_logger.info(f"Redirected to: {self.driver.current_url}")
+                time.sleep(3)
+                return self.fill_application_form()
+                
+        except Exception as e:
+            job_agent_logger.error(f"Error handling external application: {str(e)}")
+            try:
+                self.driver.switch_to.window(main_window)
+            except:
+                pass
+            return False
+    
+    def apply_to_job(self, job_info):
+        """Apply to a specific job"""
+        try:
+            job_url = job_info['url']
+            
+            job_agent_logger.info(f"Applying to: {job_info['title']} at {job_info['company']}")
+            
+            self.driver.get(job_url)
+            time.sleep(3)
+            
+            # Look for apply button with comprehensive selectors
+            apply_button = None
+            apply_selectors = [
+                # Indeed-specific
+                "//button[contains(text(), 'Apply now')]",
+                "//a[contains(text(), 'Apply now')]",
+                "//div[contains(@class, 'jobsearch-IndeedApplyButton')]//button",
+                "//button[contains(@class, 'indeed-apply-button')]",
+                
+                # "Apply on company site"
+                "//button[contains(text(), 'Apply on company site')]",
+                "//a[contains(text(), 'Apply on company site')]",
+                "//a[contains(@class, 'jobsearch-IndeedApplyButton')]",
+                
+                # Generic
+                "//button[contains(translate(text(), 'APPLY', 'apply'), 'apply')]",
+                "//a[contains(translate(text(), 'APPLY', 'apply'), 'apply')]",
+                "//button[contains(@class, 'apply')]",
+                "//button[contains(@id, 'apply')]",
+                
+                # Fallback
+                "//*[@role='button' and contains(text(), 'pply')]",
+                "//span[contains(text(), 'Apply')]/parent::button",
+                "//span[contains(text(), 'Apply')]/parent::a",
+            ]
+            
+            for selector in apply_selectors:
+                try:
+                    apply_button = self.driver.find_element(By.XPATH, selector)
+                    break
+                except NoSuchElementException:
+                    continue
+            
+            if not apply_button:
+                job_agent_logger.warning("No apply button found")
+                job_agent_logger.debug(f"Current URL: {self.driver.current_url}")
+                return False
+            
+            # Check if external application
+            button_text = apply_button.text.lower()
+            is_external = 'company site' in button_text or 'employer site' in button_text
+            
+            # Click apply button
+            try:
+                apply_button.click()
+            except ElementClickInterceptedException:
+                self.driver.execute_script("arguments[0].click();", apply_button)
+            
+            time.sleep(2)
+            
+            # Handle external vs internal
+            if is_external:
+                form_filled = self.handle_external_application(job_info)
+            else:
+                form_filled = self.fill_application_form()
+            
+            if not form_filled:
+                job_agent_logger.warning("Could not fill form fields")
+                return False
+            
+            # Look for submit button (DON'T click)
+            submit_selectors = [
+                "//button[contains(translate(text(), 'SUBMIT', 'submit'), 'submit')]",
+                "//button[@type='submit']",
+                "//input[@type='submit']",
+                "//button[contains(text(), 'Send application')]",
+            ]
+            
+            for selector in submit_selectors:
+                try:
+                    submit_btn = self.driver.find_element(By.XPATH, selector)
+                    job_agent_logger.info("Application ready to submit (auto-submit disabled)")
+                    
+                    self.applications_log.append({
+                        **job_info,
+                        'timestamp': datetime.now().isoformat(),
+                        'status': 'ready_to_submit',
+                        'form_filled': True
+                    })
+                    
+                    # UNCOMMENT TO AUTO-SUBMIT:
+                    # submit_btn.click()
+                    # job_agent_logger.info("Application submitted!")
+                    
+                    return True
+                except NoSuchElementException:
+                    continue
+            
+            job_agent_logger.warning("Could not find submit button")
+            return False
+            
+        except Exception as e:
+            job_agent_logger.error(f"Error applying to job: {str(e)}")
+            return False
+    
+    def apply_to_jobs_batch(self, job_listings, delay=None):
+        """Apply to multiple jobs"""
+        delay = delay or self.config.DEFAULT_DELAY
+        
+        successful = 0
+        failed = 0
+        
+        for i, job in enumerate(job_listings, 1):
+            job_agent_logger.info(f"Processing job {i}/{len(job_listings)}")
+            
+            if self.apply_to_job(job):
+                successful += 1
+            else:
+                failed += 1
+                self.applications_log.append({
+                    **job,
+                    'timestamp': datetime.now().isoformat(),
+                    'status': 'failed',
+                    'form_filled': False
+                })
+            
+            if i < len(job_listings):
+                time.sleep(delay)
+        
+        job_agent_logger.info(f"Batch complete: {successful} ready, {failed} failed")
+        return successful, failed
+    
+    def save_log(self):
+        """Save application log"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = self.config.LOGS_DIR / f"applications_{timestamp}.json"
+        
+        with open(log_file, 'w') as f:
+            json.dump({
+                'candidate': self.candidate_data,
+                'applications': self.applications_log,
+                'summary': {
+                    'total': len(self.applications_log),
+                    'ready': sum(1 for a in self.applications_log if a.get('status') == 'ready_to_submit'),
+                    'failed': sum(1 for a in self.applications_log if a.get('status') == 'failed')
+                }
+            }, f, indent=2)
+        
+        job_agent_logger.info(f"Log saved to: {log_file}")
+        return str(log_file)
+    
+    def close(self):
+        """Cleanup"""
+        if self.driver:
+            self.driver.quit()
+            job_agent_logger.info("WebDriver closed")
 
 # ===================== UTILITIES ===========================
 def cleanResume(txt):
@@ -712,6 +1324,284 @@ async def api_parse(resume: UploadFile = File(...)):
         "education": extracted_education
     }
 
+# ===================== JOB AGENT API ENDPOINTS ==========================
+
+@app.post("/api/search-jobs")
+async def search_jobs(
+    resume: UploadFile = File(...),
+    job_title: Optional[str] = Form(None),
+    location: Optional[str] = Form("United States"),
+    num_jobs: int = Form(10),
+    platforms: str = Form("indeed")  # comma-separated: "indeed,linkedin"
+):
+    """Search for jobs based on resume"""
+    try:
+        # Parse resume
+        filename = resume.filename
+        if filename.lower().endswith(".pdf"):
+            text = pdf_to_text(resume.file)
+        elif filename.lower().endswith(".txt"):
+            text = (await resume.read()).decode("utf-8")
+        else:
+            return JSONResponse({"error": "Invalid file format"}, status_code=400)
+        
+        # Extract candidate data
+        candidate_data = {
+            'name': extract_name_from_resume(text),
+            'email': extract_email_from_resume(text),
+            'phone': extract_contact_number_from_resume(text),
+            'category': predict_category(text),
+            'skills': extract_skills_from_resume(text),
+            'education': extract_education_from_resume(text)
+        }
+        
+        # Save resume temporarily
+        resume_filename = f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        resume_path = JobAgentConfig.RESUME_STORAGE / resume_filename
+        
+        with open(resume_path, 'wb') as f:
+            await resume.seek(0)
+            f.write(await resume.read())
+        
+        # Initialize agent
+        agent = JobApplicationAgent(candidate_data, resume_path)
+        agent.setup_driver(headless=True)
+        
+        try:
+            job_title_search = job_title or candidate_data.get('category')
+            all_jobs = []
+            
+            platform_list = [p.strip().lower() for p in platforms.split(',')]
+            
+            if 'indeed' in platform_list:
+                indeed_jobs = agent.search_jobs_indeed(job_title_search, location, num_jobs)
+                all_jobs.extend(indeed_jobs)
+            
+            if 'linkedin' in platform_list:
+                linkedin_jobs = agent.search_jobs_linkedin(job_title_search, location, num_jobs)
+                all_jobs.extend(linkedin_jobs)
+            
+            return {
+                "candidate": candidate_data,
+                "jobs_found": len(all_jobs),
+                "jobs": all_jobs,
+                "resume_id": resume_filename
+            }
+            
+        finally:
+            agent.close()
+            
+    except Exception as e:
+        job_agent_logger.error(f"Error searching jobs: {str(e)}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/apply-jobs")
+async def apply_jobs(
+    background_tasks: BackgroundTasks,
+    resume: UploadFile = File(...),
+    job_urls: str = Form(...),  # Comma-separated URLs
+    job_title: Optional[str] = Form(None),
+    location: Optional[str] = Form("United States"),
+    delay: int = Form(10)
+):
+    """Apply to specific jobs"""
+    try:
+        # Parse resume
+        filename = resume.filename
+        if filename.lower().endswith(".pdf"):
+            text = pdf_to_text(resume.file)
+        elif filename.lower().endswith(".txt"):
+            text = (await resume.read()).decode("utf-8")
+        else:
+            return JSONResponse({"error": "Invalid file format"}, status_code=400)
+        
+        # Extract candidate data
+        candidate_data = {
+            'name': extract_name_from_resume(text),
+            'email': extract_email_from_resume(text),
+            'phone': extract_contact_number_from_resume(text),
+            'category': predict_category(text),
+            'skills': extract_skills_from_resume(text),
+            'education': extract_education_from_resume(text)
+        }
+        
+        # Save resume
+        resume_filename = f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        resume_path = JobAgentConfig.RESUME_STORAGE / resume_filename
+        
+        with open(resume_path, 'wb') as f:
+            await resume.seek(0)
+            f.write(await resume.read())
+        
+        # Parse job URLs
+        urls = [url.strip() for url in job_urls.split(',') if url.strip()]
+        
+        if not urls:
+            return JSONResponse({"error": "No job URLs provided"}, status_code=400)
+        
+        # Create job listings
+        job_listings = []
+        for url in urls:
+            job_listings.append({
+                'title': 'Job Application',
+                'company': 'Unknown',
+                'location': location,
+                'url': url,
+                'platform': 'custom'
+            })
+        
+        # Initialize agent
+        agent = JobApplicationAgent(candidate_data, resume_path)
+        agent.setup_driver(headless=True)
+        
+        try:
+            successful, failed = agent.apply_to_jobs_batch(job_listings, delay)
+            log_file = agent.save_log()
+            
+            return {
+                "candidate": candidate_data,
+                "total_applications": len(job_listings),
+                "successful": successful,
+                "failed": failed,
+                "log_file": log_file,
+                "applications": agent.applications_log
+            }
+            
+        finally:
+            agent.close()
+            
+    except Exception as e:
+        job_agent_logger.error(f"Error applying to jobs: {str(e)}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.post("/api/auto-apply")
+async def auto_apply(
+    background_tasks: BackgroundTasks,
+    resume: UploadFile = File(...),
+    job_title: Optional[str] = Form(None),
+    location: Optional[str] = Form("United States"),
+    num_jobs: int = Form(5),
+    platforms: str = Form("indeed"),
+    delay: int = Form(10)
+):
+    """Search and apply to jobs automatically"""
+    try:
+        # Parse resume
+        filename = resume.filename
+        if filename.lower().endswith(".pdf"):
+            text = pdf_to_text(resume.file)
+        elif filename.lower().endswith(".txt"):
+            text = (await resume.read()).decode("utf-8")
+        else:
+            return JSONResponse({"error": "Invalid file format"}, status_code=400)
+        
+        # Extract candidate data
+        candidate_data = {
+            'name': extract_name_from_resume(text),
+            'email': extract_email_from_resume(text),
+            'phone': extract_contact_number_from_resume(text),
+            'category': predict_category(text),
+            'skills': extract_skills_from_resume(text),
+            'education': extract_education_from_resume(text)
+        }
+
+        resume_filename = f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        resume_path = JobAgentConfig.RESUME_STORAGE / resume_filename
+        
+        with open(resume_path, 'wb') as f:
+            await resume.seek(0)
+            f.write(await resume.read())
+        
+        # Initialize agent
+        agent = JobApplicationAgent(candidate_data, resume_path)
+        agent.setup_driver(headless=True)
+        
+        try:
+            job_title_search = job_title or candidate_data.get('category')
+            all_jobs = []
+            
+            platform_list = [p.strip().lower() for p in platforms.split(',')]
+            
+            if 'indeed' in platform_list:
+                indeed_jobs = agent.search_jobs_indeed(job_title_search, location, num_jobs)
+                all_jobs.extend(indeed_jobs)
+            
+            if 'linkedin' in platform_list:
+                linkedin_jobs = agent.search_jobs_linkedin(job_title_search, location, num_jobs)
+                all_jobs.extend(linkedin_jobs)
+            
+            if not all_jobs:
+                return JSONResponse({"error": "No jobs found"}, status_code=404)
+            
+            # Apply to jobs
+            successful, failed = agent.apply_to_jobs_batch(all_jobs[:num_jobs], delay)
+            log_file = agent.save_log()
+            
+            return {
+                "candidate": candidate_data,
+                "jobs_found": len(all_jobs),
+                "total_applications": len(all_jobs[:num_jobs]),
+                "successful": successful,
+                "failed": failed,
+                "log_file": log_file,
+                "applications": agent.applications_log
+            }
+            
+        finally:
+            agent.close()
+            
+    except Exception as e:
+        job_agent_logger.error(f"Error in auto-apply: {str(e)}")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/application-logs")
+async def get_application_logs():
+    """Get list of all application logs"""
+    try:
+        logs_dir = JobAgentConfig.LOGS_DIR
+        log_files = sorted(logs_dir.glob("applications_*.json"), reverse=True)
+        
+        logs = []
+        for log_file in log_files[:20]:  # Last 20 logs
+            with open(log_file, 'r') as f:
+                data = json.load(f)
+                logs.append({
+                    'filename': log_file.name,
+                    'timestamp': log_file.stem.replace('applications_', ''),
+                    'candidate': data.get('candidate', {}).get('name'),
+                    'summary': data.get('summary', {})
+                })
+        
+        return {"logs": logs}
+        
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/application-logs/{log_filename}")
+async def get_application_log_detail(log_filename: str):
+    """Get detailed application log"""
+    try:
+        log_file = JobAgentConfig.LOGS_DIR / log_filename
+        
+        if not log_file.exists():
+            return JSONResponse({"error": "Log file not found"}, status_code=404)
+        
+        with open(log_file, 'r') as f:
+            data = json.load(f)
+        
+        return data
+        
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+    
+@app.get("/job-agent", response_class=HTMLResponse)
+async def job_agent_interface(request: Request):
+    """Job agent web interface"""
+    return templates.TemplateResponse("job_agent.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,55 @@
+{
+  "candidate": {
+    "category": "TEACHER",
+    "education": [
+      "The Programme",
+      "B.E.",
+      "The (2010)"
+    ],
+    "email": "ankitsaraf@iima.ac.in",
+    "name": null,
+    "phone": "+91 - 9930492173",
+    "skills": [
+      "Research",
+      "Editing",
+      "Storytelling"
+    ]
+  },
+  "applications": [
+    {
+      "title": "Middle School ELA Teacher - Oregon Connections Academy",
+      "company": "Connections Academy",
+      "location": "Remote in Prairie City, OR 97869",
+      "url": "https://www.indeed.com/rc/clk?jk=1a9df3e08440d6d6&bb=k-IIQDbF4fFktw8MCu0Qo6WSF9m-WPO6kF9fWnjOsIM7j3d_ZYuNZgEEU_Fc7_3Hv8p-4n6LpNARivKk1g6PfOJZgd-oewjsDHVzFVYlZaXuUXFLsmoQ27HPqPvzwpAie6ZiMGl8ic4%3D&xkcb=SoD_67M3r8HAM-TS4x0LbzkdCdPP&fccid=c40b43f12fe7b69f&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-12T20:01:10.770898",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "High School Social Studies Teacher - Oregon Connections Academy",
+      "company": "Connections Academy",
+      "location": "Remote in Prairie City, OR 97869",
+      "url": "https://www.indeed.com/rc/clk?jk=4ab2f9aa7b2d0146&bb=k-IIQDbF4fFktw8MCu0Qo6VVVAatfBy8pjts96z7-EBPLTDhRSEJaS1KFK8uQ4xwLwtb7EgjytBqQN7uFPf0PPHGolwwdVfrfh0QYk3fb6WXzgsFUnSxdEm-BPfG4ETLocJGF--LqIY%3D&xkcb=SoBL67M3r8HAM-TS4x0KbzkdCdPP&fccid=c40b43f12fe7b69f&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-12T20:01:24.217300",
+      "status": "failed",
+      "form_filled": false
+    },
+    {
+      "title": "Middle School Math Teacher - Oregon Connections Academy",
+      "company": "Connections Academy",
+      "location": "Remote in Prairie City, OR 97869",
+      "url": "https://www.indeed.com/rc/clk?jk=584c8c3de378cb73&bb=k-IIQDbF4fFktw8MCu0Qo3J-zthOD4chS9hVQqKG77gv3V1Z4kQpcG1CdrdW4nBh5SOF_C1ro-1Vjxe3pasxpx3HP5arkyEXeE7FwidlfU7Mo0kPUtqjd2CaYY83wJ9s9e2RfV2Y74U%3D&xkcb=SoDW67M3r8HAM-TS4x0JbzkdCdPP&fccid=c40b43f12fe7b69f&vjs=3",
+      "platform": "indeed",
+      "timestamp": "2025-11-12T20:01:37.652599",
+      "status": "failed",
+      "form_filled": false
+    }
+  ],
+  "summary": {
+    "total": 3,
+    "ready": 0,
+    "failed": 3
+  }
+}

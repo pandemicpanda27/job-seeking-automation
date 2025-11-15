@@ -1,0 +1,51 @@
+2025-11-12 20:00:44,343 - INFO - Initializing Job Application Agent...
+2025-11-12 20:00:44,344 - INFO - Parsing resume via Flask API...
+2025-11-12 20:00:47,013 - INFO - Resume parsed successfully
+2025-11-12 20:00:47,014 - INFO - Candidate: None
+2025-11-12 20:00:47,014 - INFO - Category: TEACHER
+2025-11-12 20:00:47,014 - INFO - Skills: 3 found
+2025-11-12 20:00:47,015 - INFO - Setting up WebDriver...
+2025-11-12 20:00:52,098 - INFO - WebDriver initialized successfully
+2025-11-12 20:00:52,098 - INFO - 
+Searching for jobs: TEACHER
+2025-11-12 20:00:52,100 - INFO - Searching Indeed: TEACHER in Bengaluru, KA
+2025-11-12 20:00:57,903 - INFO - Found 5 jobs on Indeed
+2025-11-12 20:00:57,904 - INFO - Searching LinkedIn: TEACHER in Bengaluru, KA
+2025-11-12 20:01:06,646 - INFO - Found 0 jobs on LinkedIn
+2025-11-12 20:01:06,646 - INFO - 
+Found 5 jobs:
+2025-11-12 20:01:06,646 - INFO - 1. Middle School ELA Teacher - Oregon Connections Academy at Connections Academy (indeed)
+2025-11-12 20:01:06,646 - INFO - 2. High School Social Studies Teacher - Oregon Connections Academy at Connections Academy (indeed)
+2025-11-12 20:01:06,646 - INFO - 3. Middle School Math Teacher - Oregon Connections Academy at Connections Academy (indeed)
+2025-11-12 20:01:06,646 - INFO - 4. Advisory Teacher - Arkansas Connections Academy at Connections Academy (indeed)
+2025-11-12 20:01:06,647 - INFO - 5. Special Education Teacher - Oregon Connections Academy at Connections Academy (indeed)
+2025-11-12 20:01:06,647 - INFO - 
+Starting application process...
+2025-11-12 20:01:06,647 - INFO - 
+============================================================
+2025-11-12 20:01:06,647 - INFO - Processing job 1/3
+2025-11-12 20:01:06,647 - INFO - ============================================================
+2025-11-12 20:01:06,647 - INFO - Applying to: Middle School ELA Teacher - Oregon Connections Academy at Connections Academy
+2025-11-12 20:01:10,554 - WARNING - No apply button found
+2025-11-12 20:01:10,770 - INFO - Waiting 10 seconds before next application...
+2025-11-12 20:01:20,772 - INFO - 
+============================================================
+2025-11-12 20:01:20,772 - INFO - Processing job 2/3
+2025-11-12 20:01:20,772 - INFO - ============================================================
+2025-11-12 20:01:20,773 - INFO - Applying to: High School Social Studies Teacher - Oregon Connections Academy at Connections Academy
+2025-11-12 20:01:24,031 - WARNING - No apply button found
+2025-11-12 20:01:24,217 - INFO - Waiting 10 seconds before next application...
+2025-11-12 20:01:34,218 - INFO - 
+============================================================
+2025-11-12 20:01:34,218 - INFO - Processing job 3/3
+2025-11-12 20:01:34,218 - INFO - ============================================================
+2025-11-12 20:01:34,218 - INFO - Applying to: Middle School Math Teacher - Oregon Connections Academy at Connections Academy
+2025-11-12 20:01:37,487 - WARNING - No apply button found
+2025-11-12 20:01:37,652 - INFO - 
+============================================================
+2025-11-12 20:01:37,652 - INFO - Batch complete: 0 ready to submit, 3 failed
+2025-11-12 20:01:37,653 - INFO - ============================================================
+2025-11-12 20:01:37,654 - INFO - Log saved to: C:\Users\pokef\Documents\ML Projects\job-seeking-automation\job-agent\logs\applications_20251112_200137.json
+2025-11-12 20:01:37,654 - INFO - 
+✓ Process complete!
+2025-11-12 20:01:39,857 - INFO - WebDriver closed
